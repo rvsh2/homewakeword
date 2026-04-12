@@ -4,3 +4,10 @@ version: 1.2.3
 backend: bcresnet
 framework: tflite
 model_path: missing_model.tflite
+provenance:
+  source: fixture://tests/missing_model.tflite
+  training_recipe: fixture-bcresnet
+  training_recipe_version: 1.2.3
+  artifact_sha256: b96fed2b844b770ae57ffdef4bc264dea5eb77ce9dd96bcbaf163cf72cbe4282
+  license: CC-BY-4.0
+  provenance_status: approved

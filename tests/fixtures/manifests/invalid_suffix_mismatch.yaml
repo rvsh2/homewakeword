@@ -4,3 +4,10 @@ version: 1.2.3
 backend: bcresnet
 framework: tflite
 model_path: fixture_model.onnx
+provenance:
+  source: fixture://tests/fixture_model.onnx
+  training_recipe: fixture-bcresnet
+  training_recipe_version: 1.2.3
+  artifact_sha256: 587659a3e788edc060dd7dfc2ef37837cf7acf8c96aed714596cf3dd3f0b6f38
+  license: CC-BY-4.0
+  provenance_status: approved
