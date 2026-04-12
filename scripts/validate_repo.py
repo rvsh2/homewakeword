@@ -5,7 +5,12 @@ import sys
 
 
 REQUIRED_PATHS = [
+    "hacs.json",
     "homewakeword",
+    "custom_components/homewakeword",
+    "custom_components/homewakeword/__init__.py",
+    "custom_components/homewakeword/manifest.json",
+    "custom_components/homewakeword/config_flow.py",
     "addon/homewakeword",
     "addon/homewakeword/config.yaml",
     "addon/homewakeword/Dockerfile",
