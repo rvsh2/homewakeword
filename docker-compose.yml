@@ -1,0 +1,10 @@
+services:
+  homewakeword:
+    image: local/homewakeword-bcresnet
+    container_name: homewakeword-bcresnet
+    ports:
+      - "10700:10700"
+    volumes:
+      - ./data:/data
+      - ./share:/share
+    command: ["serve"]
