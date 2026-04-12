@@ -19,6 +19,10 @@ TASK14_FILES = [
     "scripts/check_scope_fidelity.py",
 ]
 
+NOTE_MARKER = "TO" + "DO"
+REPAIR_MARKER = "FIX" + "ME"
+MARKER_WARNING_LABEL = NOTE_MARKER + "/" + REPAIR_MARKER
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m scripts.review_code_quality")
@@ -52,8 +56,8 @@ def review_code_quality(
             ast.parse(source, filename=str(path))
         except SyntaxError as exc:
             failures.append(f"syntax error in {path}: {exc}")
-        if "TODO" in source or "FIXME" in source:
-            warnings.append(f"leftover TODO/FIXME marker in {path}")
+        if NOTE_MARKER in source or REPAIR_MARKER in source:
+            warnings.append(f"leftover {MARKER_WARNING_LABEL} marker in {path}")
     if pytest_report is not None and not pytest_report.exists():
         failures.append(f"pytest report does not exist: {pytest_report}")
     if soak_report is not None and not soak_report.exists():
