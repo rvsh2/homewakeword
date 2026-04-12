@@ -1,0 +1,39 @@
+name: HomeWakeWord BC-ResNet
+version: "0.0.0"
+slug: homewakeword-bcresnet
+description: Wyoming-facing BC-ResNet wake word runtime for Home Assistant
+arch:
+  - amd64
+  - aarch64
+  - armv7
+  - i386
+startup: services
+boot: auto
+init: false
+image: ghcr.io/homewakeword/{arch}-addon-homewakeword-bcresnet
+ports:
+  10700/tcp: 10700
+ports_description:
+  10700/tcp: Wyoming service metadata port
+map:
+  - share:rw
+options:
+  host: 0.0.0.0
+  port: 10700
+  detector_backend: bcresnet
+  manifest: /app/models/manifest.yaml
+  custom_models: true
+  custom_model_dir: /share/homewakeword/models
+  openwakeword_compat: false
+  openwakeword_model_dir: /share/openwakeword
+  log_level: info
+schema:
+  host: str
+  port: int
+  detector_backend: str
+  manifest: str
+  custom_models: bool
+  custom_model_dir: str
+  openwakeword_compat: bool
+  openwakeword_model_dir: str
+  log_level: str

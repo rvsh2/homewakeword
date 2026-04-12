@@ -1,0 +1,167 @@
+default_model: okay_nabu
+models:
+  - model_id: okay_nabu_v1
+    wake_word: okay_nabu
+    version: 1.0.0
+    backend: bcresnet
+    framework: tflite
+    model_path: okay_nabu.tflite
+    threshold: 0.55
+    provenance:
+      source: private://homewakeword/release-assets/v1/okay_nabu.tflite
+      training_recipe: homewakeword-bcresnet-v1-pack
+      training_recipe_version: 1.0.0
+      artifact_sha256: 8af663e2cd6f1b20c74596213f0ab033fe701b9826f5e0ad501595199228fca8
+      license: LicenseRef-HomeWakeWord-Internal-Eval
+      provenance_status: approved
+    evaluation:
+      status: validated
+      positive_fixture: ../tests/fixtures/stream/okay_nabu_positive.wav
+      negative_fixture: ../tests/fixtures/stream/okay_nabu_negative.wav
+    audio:
+      sample_rate_hz: 16000
+      sample_width_bytes: 2
+      channels: 1
+      frame_samples: 1280
+      window_seconds: 1.0
+    frontend:
+      n_fft: 512
+      win_length: 480
+      hop_length: 160
+      n_mels: 40
+      f_min_hz: 20.0
+      f_max_hz: 7600.0
+      log_floor: 1.0e-6
+      context_seconds: 1.0
+  - model_id: hey_jarvis_v1
+    wake_word: hey_jarvis
+    version: 1.0.0
+    backend: bcresnet
+    framework: tflite
+    model_path: hey_jarvis.tflite
+    threshold: 0.55
+    provenance:
+      source: private://homewakeword/release-assets/v1/hey_jarvis.tflite
+      training_recipe: homewakeword-bcresnet-v1-pack
+      training_recipe_version: 1.0.0
+      artifact_sha256: 8af663e2cd6f1b20c74596213f0ab033fe701b9826f5e0ad501595199228fca8
+      license: LicenseRef-HomeWakeWord-Internal-Eval
+      provenance_status: approved
+    evaluation:
+      status: validated
+      positive_fixture: ../tests/fixtures/stream/hey_jarvis_positive.wav
+      negative_fixture: ../tests/fixtures/stream/hey_jarvis_negative.wav
+    audio:
+      sample_rate_hz: 16000
+      sample_width_bytes: 2
+      channels: 1
+      frame_samples: 1280
+      window_seconds: 1.0
+    frontend:
+      n_fft: 512
+      win_length: 480
+      hop_length: 160
+      n_mels: 40
+      f_min_hz: 20.0
+      f_max_hz: 7600.0
+      log_floor: 1.0e-6
+      context_seconds: 1.0
+  - model_id: alexa_v1
+    wake_word: alexa
+    version: 1.0.0
+    backend: bcresnet
+    framework: tflite
+    model_path: alexa.tflite
+    threshold: 0.55
+    provenance:
+      source: private://homewakeword/release-assets/v1/alexa.tflite
+      training_recipe: homewakeword-bcresnet-v1-pack
+      training_recipe_version: 1.0.0
+      artifact_sha256: 8af663e2cd6f1b20c74596213f0ab033fe701b9826f5e0ad501595199228fca8
+      license: LicenseRef-HomeWakeWord-Internal-Eval
+      provenance_status: approved
+    evaluation:
+      status: validated
+      positive_fixture: ../tests/fixtures/stream/alexa_positive.wav
+      negative_fixture: ../tests/fixtures/stream/alexa_negative.wav
+    audio:
+      sample_rate_hz: 16000
+      sample_width_bytes: 2
+      channels: 1
+      frame_samples: 1280
+      window_seconds: 1.0
+    frontend:
+      n_fft: 512
+      win_length: 480
+      hop_length: 160
+      n_mels: 40
+      f_min_hz: 20.0
+      f_max_hz: 7600.0
+      log_floor: 1.0e-6
+      context_seconds: 1.0
+  - model_id: hey_mycroft_v1
+    wake_word: hey_mycroft
+    version: 1.0.0
+    backend: bcresnet
+    framework: tflite
+    model_path: hey_mycroft.tflite
+    threshold: 0.55
+    provenance:
+      source: private://homewakeword/release-assets/v1/hey_mycroft.tflite
+      training_recipe: homewakeword-bcresnet-v1-pack
+      training_recipe_version: 1.0.0
+      artifact_sha256: 8af663e2cd6f1b20c74596213f0ab033fe701b9826f5e0ad501595199228fca8
+      license: LicenseRef-HomeWakeWord-Internal-Eval
+      provenance_status: approved
+    evaluation:
+      status: validated
+      positive_fixture: ../tests/fixtures/stream/hey_mycroft_positive.wav
+      negative_fixture: ../tests/fixtures/stream/hey_mycroft_negative.wav
+    audio:
+      sample_rate_hz: 16000
+      sample_width_bytes: 2
+      channels: 1
+      frame_samples: 1280
+      window_seconds: 1.0
+    frontend:
+      n_fft: 512
+      win_length: 480
+      hop_length: 160
+      n_mels: 40
+      f_min_hz: 20.0
+      f_max_hz: 7600.0
+      log_floor: 1.0e-6
+      context_seconds: 1.0
+  - model_id: hey_rhasspy_v1
+    wake_word: hey_rhasspy
+    version: 1.0.0
+    backend: bcresnet
+    framework: tflite
+    model_path: hey_rhasspy.tflite
+    threshold: 0.55
+    provenance:
+      source: private://homewakeword/release-assets/v1/hey_rhasspy.tflite
+      training_recipe: homewakeword-bcresnet-v1-pack
+      training_recipe_version: 1.0.0
+      artifact_sha256: 8af663e2cd6f1b20c74596213f0ab033fe701b9826f5e0ad501595199228fca8
+      license: LicenseRef-HomeWakeWord-Internal-Eval
+      provenance_status: approved
+    evaluation:
+      status: validated
+      positive_fixture: ../tests/fixtures/stream/hey_rhasspy_positive.wav
+      negative_fixture: ../tests/fixtures/stream/hey_rhasspy_negative.wav
+    audio:
+      sample_rate_hz: 16000
+      sample_width_bytes: 2
+      channels: 1
+      frame_samples: 1280
+      window_seconds: 1.0
+    frontend:
+      n_fft: 512
+      win_length: 480
+      hop_length: 160
+      n_mels: 40
+      f_min_hz: 20.0
+      f_max_hz: 7600.0
+      log_floor: 1.0e-6
+      context_seconds: 1.0
