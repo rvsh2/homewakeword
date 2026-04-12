@@ -1,0 +1,18 @@
+cycles_per_hour: 6
+startup_limit_ms: 250.0
+addon_restart_attempts: 2
+cases:
+  - label: default-negative
+    input: ../stream/no_wake_negative.wav
+    expect: none
+  - label: default-positive
+    input: ../stream/okay_nabu_positive.wav
+    expect: okay_nabu
+upgrade:
+  baseline_manifest: ../manifests/restart_swap_okay_nabu.yaml
+  baseline_input: ../stream/okay_nabu_positive.wav
+  baseline_expect: okay_nabu
+  valid_manifest: ../manifests/restart_swap_hey_jarvis.yaml
+  valid_input: ../stream/hey_jarvis_positive.wav
+  valid_expect: hey_jarvis
+  invalid_manifest: ../manifests/restart_swap_invalid_missing_artifact.yaml
