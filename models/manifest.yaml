@@ -5,6 +5,13 @@ backend: bcresnet
 framework: tflite
 model_path: homewake_bcresnet_default.tflite
 threshold: 0.5
+provenance:
+  source: private://homewake/release-assets/homewake_bcresnet_default.tflite
+  training_recipe: homewake-bcresnet-v1
+  training_recipe_version: 0.1.0
+  artifact_sha256: 8af663e2cd6f1b20c74596213f0ab033fe701b9826f5e0ad501595199228fca8
+  license: LicenseRef-HomeWake-Internal-Eval
+  provenance_status: approved
 audio:
   sample_rate_hz: 16000
   sample_width_bytes: 2
