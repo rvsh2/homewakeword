@@ -6,10 +6,14 @@ services:
     privileged: true
     restart: "no"
     environment:
-      SUPERVISOR_SHARE: /data/share
+      SUPERVISOR_MACHINE: generic-x86-64
+      SUPERVISOR_SHARE: /opt/homewake/.sisyphus/ha-supervised/share
       SUPERVISOR_NAME: homewake-smoke
     volumes:
       - ha_data:/data
+      - /opt/homewake/.sisyphus/ha-supervised/share:/opt/homewake/.sisyphus/ha-supervised/share
+      - /etc/machine-id:/etc/machine-id:ro
+      - /run/dbus:/run/dbus:ro
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - ha_supervised
@@ -21,16 +25,16 @@ services:
       - ha_supervisor
     volumes:
       - ha_config:/config
-    ports:
-      - "8123:8123"
     networks:
       - ha_supervised
 
   addon_registry:
     image: registry:2
     restart: "no"
+    environment:
+      REGISTRY_HTTP_ADDR: 0.0.0.0:80
     ports:
-      - "5000:5000"
+      - "5000:80"
     networks:
       - ha_supervised
 

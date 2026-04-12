@@ -10,6 +10,7 @@ import shlex
 import shutil
 import subprocess
 from tempfile import TemporaryDirectory
+from textwrap import dedent
 import time
 from typing import Any, TypedDict, cast
 
@@ -31,6 +32,7 @@ from scripts.replay_stream import main as replay_stream_main
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MANIFEST = REPO_ROOT / "models" / "manifest.yaml"
 DEFAULT_ADDON_DOCKERFILE = REPO_ROOT / "addon" / "homewake-bcresnet" / "Dockerfile"
+DEFAULT_ADDON_SOURCE = REPO_ROOT / "addon" / "homewake-bcresnet"
 DEFAULT_HARNESS = (
     REPO_ROOT / "tests" / "harness" / "ha-supervised" / "docker-compose.yml"
 )
@@ -453,6 +455,470 @@ def _ensure_addon_image(
     return False, logs, detail
 
 
+def _extract_service_environment(service: dict[str, Any]) -> dict[str, str]:
+    environment = service.get("environment")
+    if isinstance(environment, dict):
+        return {str(key): str(value) for key, value in environment.items()}
+    if not isinstance(environment, list):
+        return {}
+
+    values: dict[str, str] = {}
+    for item in environment:
+        if not isinstance(item, str) or "=" not in item:
+            continue
+        key, value = item.split("=", 1)
+        values[key] = value
+    return values
+
+
+def _supervisor_share_path(harness_spec: dict[str, Any]) -> Path | None:
+    services = harness_spec.get("services")
+    if not isinstance(services, dict):
+        return None
+    supervisor = services.get("ha_supervisor")
+    if not isinstance(supervisor, dict):
+        return None
+    environment = _extract_service_environment(supervisor)
+    share_path = environment.get("SUPERVISOR_SHARE")
+    if not share_path:
+        return None
+    return Path(share_path)
+
+
+def _prepare_supervisor_share(
+    share_root: Path,
+    *,
+    addon_install_slug: str,
+) -> None:
+    (share_root / "audio").mkdir(parents=True, exist_ok=True)
+    (share_root / "dns").mkdir(parents=True, exist_ok=True)
+    (share_root / "share").mkdir(parents=True, exist_ok=True)
+    (share_root / "addons" / "data" / addon_install_slug).mkdir(
+        parents=True, exist_ok=True
+    )
+    cid_files = share_root / "cid_files"
+    cid_files.mkdir(parents=True, exist_ok=True)
+    for cid_file in (
+        "hassio_cli.cid",
+        "hassio_observer.cid",
+        "hassio_multicast.cid",
+        f"addon_{addon_install_slug}.cid",
+    ):
+        (cid_files / cid_file).touch(exist_ok=True)
+
+
+def _resolve_compose_service_container(
+    compose_command: list[str],
+    *,
+    harness_path: Path,
+    service_name: str,
+    evidence_root: Path,
+) -> tuple[str | None, list[Path], str | None]:
+    ps_log = evidence_root / f"ha-smoke-{service_name}-compose-ps.log"
+    ps_result = _run_command(
+        [*compose_command, "-f", str(harness_path), "ps", "-q", service_name],
+        log_path=ps_log,
+        timeout_seconds=60,
+    )
+    container_id = ps_result.stdout.strip()
+    if ps_result.returncode != 0 or not container_id:
+        detail = (
+            ps_result.stderr.strip()
+            or ps_result.stdout.strip()
+            or f"could not resolve compose container for {service_name}"
+        )
+        return None, [ps_log], detail
+    return container_id, [ps_log], None
+
+
+def _resolve_container_gateway(
+    container_id: str,
+    *,
+    evidence_root: Path,
+) -> tuple[str | None, list[Path], str | None]:
+    inspect_log = evidence_root / "ha-smoke-supervisor-gateway.log"
+    inspect_result = _run_command(
+        [
+            "docker",
+            "inspect",
+            container_id,
+            "--format",
+            "{{range .NetworkSettings.Networks}}{{.Gateway}}{{end}}",
+        ],
+        log_path=inspect_log,
+        timeout_seconds=60,
+    )
+    gateway = inspect_result.stdout.strip()
+    if inspect_result.returncode != 0 or not gateway:
+        detail = (
+            inspect_result.stderr.strip()
+            or inspect_result.stdout.strip()
+            or "could not resolve the supervisor network gateway"
+        )
+        return None, [inspect_log], detail
+    return gateway, [inspect_log], None
+
+
+def _load_addon_version(addon_source: Path) -> str:
+    config_path = addon_source / "config.yaml"
+    raw = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    if not isinstance(raw, dict):
+        raise ValueError(f"invalid add-on config: {config_path}")
+    version = raw.get("version")
+    if not isinstance(version, str) or not version:
+        raise ValueError(f"add-on config is missing a string version: {config_path}")
+    return version
+
+
+def _push_addon_image_to_registry(
+    *,
+    addon_image: str,
+    addon_slug: str,
+    addon_version: str,
+    push_host: str,
+    image_host: str,
+    evidence_root: Path,
+) -> tuple[bool, str, list[Path], str]:
+    push_image = f"{push_host}:5000/{addon_slug}"
+    registry_image = f"{image_host}/{addon_slug}"
+    full_tag = f"{push_image}:{addon_version}"
+    tag_log = evidence_root / "ha-smoke-registry-tag.log"
+    push_log = evidence_root / "ha-smoke-registry-push.log"
+    tag_result = _run_command(
+        ["docker", "tag", addon_image, full_tag],
+        log_path=tag_log,
+        timeout_seconds=60,
+    )
+    push_result = _run_command(
+        ["docker", "push", full_tag],
+        log_path=push_log,
+        timeout_seconds=180,
+    )
+    logs = [tag_log, push_log]
+    if tag_result.returncode == 0 and push_result.returncode == 0:
+        return True, registry_image, logs, f"pushed {full_tag} to the harness registry"
+    detail = (
+        push_result.stderr.strip()
+        or push_result.stdout.strip()
+        or tag_result.stderr.strip()
+        or tag_result.stdout.strip()
+        or f"failed to push {full_tag}"
+    )
+    return False, registry_image, logs, detail
+
+
+def _resolve_registry_service_host(harness_spec: dict[str, Any]) -> str | None:
+    services = harness_spec.get("services")
+    if not isinstance(services, dict):
+        return None
+    if "addon_registry" not in services:
+        return None
+    return "localhost.localdomain:5000"
+
+
+def _ensure_local_addon_version_tag(
+    *,
+    addon_image: str,
+    addon_version: str,
+    evidence_root: Path,
+) -> tuple[bool, str, list[Path], str]:
+    tag_log = evidence_root / "ha-smoke-local-addon-tag.log"
+    versioned_tag = f"{addon_image}:{addon_version}"
+    tag_result = _run_command(
+        ["docker", "tag", addon_image, versioned_tag],
+        log_path=tag_log,
+        timeout_seconds=60,
+    )
+    if tag_result.returncode == 0:
+        return True, addon_image, [tag_log], f"tagged {versioned_tag} for Supervisor"
+    detail = (
+        tag_result.stderr.strip()
+        or tag_result.stdout.strip()
+        or f"failed to tag {versioned_tag}"
+    )
+    return False, addon_image, [tag_log], detail
+
+
+def _copy_local_addon_repository(
+    *,
+    supervisor_container: str,
+    addon_slug: str,
+    image_reference: str,
+    evidence_root: Path,
+) -> tuple[bool, list[Path], str]:
+    if not DEFAULT_ADDON_SOURCE.exists():
+        return False, [], f"local add-on source is missing: {DEFAULT_ADDON_SOURCE}"
+
+    with TemporaryDirectory() as tmpdir:
+        staged_root = Path(tmpdir) / addon_slug
+        shutil.copytree(DEFAULT_ADDON_SOURCE, staged_root)
+        config_path = staged_root / "config.yaml"
+        config = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+        if not isinstance(config, dict):
+            return False, [], f"local add-on config is invalid: {config_path}"
+        config["image"] = image_reference
+        _write_text(config_path, yaml.safe_dump(config, sort_keys=False))
+
+        parent_log = evidence_root / "ha-smoke-local-addon-parent.log"
+        cleanup_log = evidence_root / "ha-smoke-local-addon-cleanup.log"
+        copy_log = evidence_root / "ha-smoke-local-addon-copy.log"
+        parent_result = _run_command(
+            [
+                "docker",
+                "exec",
+                supervisor_container,
+                "sh",
+                "-lc",
+                "mkdir -p /data/addons/local",
+            ],
+            log_path=parent_log,
+            timeout_seconds=60,
+        )
+        cleanup_result = _run_command(
+            [
+                "docker",
+                "exec",
+                supervisor_container,
+                "sh",
+                "-lc",
+                f"rm -rf /data/addons/local/{addon_slug}",
+            ],
+            log_path=cleanup_log,
+            timeout_seconds=60,
+        )
+        copy_result = _run_command(
+            [
+                "docker",
+                "cp",
+                str(staged_root),
+                f"{supervisor_container}:/data/addons/local",
+            ],
+            log_path=copy_log,
+            timeout_seconds=120,
+        )
+    logs = [parent_log, cleanup_log, copy_log]
+    if (
+        parent_result.returncode == 0
+        and cleanup_result.returncode == 0
+        and copy_result.returncode == 0
+    ):
+        return (
+            True,
+            logs,
+            f"copied local add-on repo into /data/addons/local/{addon_slug}",
+        )
+    detail = (
+        copy_result.stderr.strip()
+        or copy_result.stdout.strip()
+        or cleanup_result.stderr.strip()
+        or cleanup_result.stdout.strip()
+        or parent_result.stderr.strip()
+        or parent_result.stdout.strip()
+        or "failed to stage the local add-on repository"
+    )
+    return False, logs, detail
+
+
+def _run_supervisor_managed_addon_attempt(
+    *,
+    supervisor_container: str,
+    addon_slug: str,
+    evidence_root: Path,
+) -> dict[str, object]:
+    install_slug = f"local_{addon_slug}"
+    attempt_artifact = evidence_root / "ha-smoke-supervisor-attempt.json"
+    script_log = evidence_root / "ha-smoke-supervisor-attempt.log"
+    script_copy_log = evidence_root / "ha-smoke-supervisor-script-copy.log"
+    artifact_copy_log = evidence_root / "ha-smoke-supervisor-artifact-copy.log"
+    container_script_path = "/tmp/ha-smoke-supervisor-attempt.py"
+    container_output_path = "/tmp/ha-smoke-supervisor-attempt.json"
+
+    script_content = (
+        dedent(
+            f"""
+        import asyncio
+        import json
+        import traceback
+        from contextlib import suppress
+
+        from supervisor.addons.addon import Addon
+        from supervisor.bootstrap import initialize_coresys, initialize_system
+
+
+        async def _cleanup(addon):
+            if addon is None:
+                return None
+            cleanup = {{"stopped": False, "uninstalled": False}}
+            with suppress(Exception):
+                if await addon.is_running():
+                    await addon.stop()
+                    cleanup["stopped"] = True
+            with suppress(Exception):
+                await addon.uninstall(remove_config=True, remove_image=False)
+                cleanup["uninstalled"] = True
+            return cleanup
+
+
+        async def main():
+            result = {{
+                "status": "blocked",
+                "code": "HA_HARNESS_SUPERVISOR_FLOW_BLOCKED",
+                "detail": "supervisor-managed add-on attempt did not complete",
+                "install_slug": {install_slug!r},
+            }}
+            addon = None
+            try:
+                coresys = await initialize_coresys()
+                initialize_system(coresys)
+                await coresys.arch.load()
+                await coresys.core.setup()
+
+                available_local = sorted(
+                    key for key in coresys.store.data.addons if key.startswith("local_")
+                )
+                result["available_local_addons"] = available_local
+                if {install_slug!r} not in coresys.store.data.addons:
+                    result["code"] = "HA_HARNESS_REPOSITORY_UNAVAILABLE"
+                    result["detail"] = (
+                        "Supervisor did not expose the staged local add-on in the store"
+                    )
+                    return result
+
+                existing = coresys.addons.get_local_only({install_slug!r})
+                if existing is not None:
+                    await _cleanup(existing)
+
+                addon = Addon(coresys, {install_slug!r})
+                try:
+                    await addon.install()
+                    result["installed"] = True
+                except Exception as err:  # pylint: disable=broad-except
+                    result["code"] = "HA_HARNESS_INSTALL_FAILED"
+                    result["detail"] = f"{{type(err).__name__}}: {{err}}"
+                    result["install_traceback"] = traceback.format_exc()
+                    return result
+
+                try:
+                    task = await addon.start()
+                    if task is not None:
+                        await task
+                except Exception as err:  # pylint: disable=broad-except
+                    result["code"] = "HA_HARNESS_START_BLOCKED"
+                    result["detail"] = f"{{type(err).__name__}}: {{err}}"
+                    result["start_traceback"] = traceback.format_exc()
+
+                result["state"] = str(addon.state)
+                result["running"] = await addon.is_running()
+                result["container_name"] = addon.instance.name
+                with suppress(Exception):
+                    result["addon_logs_tail"] = (await addon.instance.logs())[-50:]
+
+                if result.get("running"):
+                    result["status"] = "pass"
+                    result["code"] = "HA_HARNESS_ADDON_STARTED"
+                    result["detail"] = (
+                        "Supervisor installed and started the staged local add-on"
+                    )
+                elif result.get("code") == "HA_HARNESS_SUPERVISOR_FLOW_BLOCKED":
+                    result["code"] = "HA_HARNESS_START_BLOCKED"
+                    result["detail"] = (
+                        "Supervisor installed the local add-on but it never reached a running state"
+                    )
+                return result
+            except Exception as err:  # pylint: disable=broad-except
+                result["code"] = "HA_HARNESS_SUPERVISOR_FLOW_BLOCKED"
+                result["detail"] = f"{{type(err).__name__}}: {{err}}"
+                result["traceback"] = traceback.format_exc()
+                return result
+            finally:
+                cleanup = await _cleanup(addon)
+                if cleanup is not None:
+                    result["cleanup"] = cleanup
+
+
+        payload = asyncio.run(main())
+        with open({str(container_output_path)!r}, "w", encoding="utf-8") as handle:
+            json.dump(payload, handle, indent=2, sort_keys=True)
+            handle.write("\\n")
+        """
+        ).strip()
+        + "\n"
+    )
+
+    with TemporaryDirectory() as tmpdir:
+        local_script = Path(tmpdir) / "ha_smoke_supervisor_attempt.py"
+        _write_text(local_script, script_content)
+        copy_script = _run_command(
+            [
+                "docker",
+                "cp",
+                str(local_script),
+                f"{supervisor_container}:{container_script_path}",
+            ],
+            log_path=script_copy_log,
+            timeout_seconds=60,
+        )
+    if copy_script.returncode != 0:
+        detail = (
+            copy_script.stderr.strip()
+            or copy_script.stdout.strip()
+            or "failed to copy the supervisor attempt script"
+        )
+        return {
+            "status": "blocked",
+            "code": "HA_HARNESS_SUPERVISOR_FLOW_BLOCKED",
+            "detail": detail,
+            "artifacts": [attempt_artifact],
+            "logs": [script_copy_log],
+        }
+
+    run_script = _run_command(
+        ["docker", "exec", supervisor_container, "python3", container_script_path],
+        log_path=script_log,
+        timeout_seconds=600,
+    )
+    copy_artifact = _run_command(
+        [
+            "docker",
+            "cp",
+            f"{supervisor_container}:{container_output_path}",
+            str(attempt_artifact),
+        ],
+        log_path=artifact_copy_log,
+        timeout_seconds=60,
+    )
+    logs = [script_copy_log, script_log, artifact_copy_log]
+    artifacts = [attempt_artifact]
+    if copy_artifact.returncode != 0 or not attempt_artifact.exists():
+        detail = (
+            copy_artifact.stderr.strip()
+            or copy_artifact.stdout.strip()
+            or run_script.stderr.strip()
+            or run_script.stdout.strip()
+            or "supervisor attempt did not produce an artifact"
+        )
+        return {
+            "status": "blocked",
+            "code": "HA_HARNESS_SUPERVISOR_FLOW_BLOCKED",
+            "detail": detail,
+            "artifacts": artifacts,
+            "logs": logs,
+        }
+
+    attempt_payload = _read_json(attempt_artifact)
+    return {
+        "status": str(attempt_payload.get("status", "blocked")),
+        "code": str(attempt_payload.get("code", "HA_HARNESS_SUPERVISOR_FLOW_BLOCKED")),
+        "detail": str(
+            attempt_payload.get(
+                "detail", "supervisor-managed add-on attempt returned no detail"
+            )
+        ),
+        "artifacts": artifacts,
+        "logs": logs,
+    }
+
+
 def ha_smoke(
     harness_path: Path,
     *,
@@ -801,6 +1267,11 @@ def ha_smoke(
                         logs=[compose_config_log],
                     )
                 else:
+                    share_root = _supervisor_share_path(harness_spec)
+                    if share_root is not None:
+                        _prepare_supervisor_share(
+                            share_root, addon_install_slug=f"local_{addon_slug}"
+                        )
                     compose_up_log = evidence_root / "ha-smoke-compose-up.log"
                     compose_down_log = evidence_root / "ha-smoke-compose-down.log"
                     try:
@@ -824,75 +1295,150 @@ def ha_smoke(
                             notes = report.get("notes")
                             if isinstance(notes, list):
                                 notes.append(
-                                    "Harness booted far enough for compose orchestration, but add-on installation stays best-effort because the workspace does not provide a scripted Supervisor API/bootstrap path."
+                                    "Harness booted far enough for compose orchestration and now attempts a Supervisor-managed local add-on install/start inside the supervised container."
                                 )
-                            registry_service_present = (
-                                isinstance(harness_spec.get("services"), dict)
-                                and "addon_registry" in harness_spec["services"]
+                            (
+                                supervisor_container,
+                                container_logs,
+                                container_detail,
+                            ) = _resolve_compose_service_container(
+                                compose_command,
+                                harness_path=harness_path,
+                                service_name="ha_supervisor",
+                                evidence_root=evidence_root,
                             )
-                            if registry_service_present:
-                                push_tag = f"localhost:5000/{addon_slug}:smoke"
-                                tag_log = evidence_root / "ha-smoke-registry-tag.log"
-                                push_log = evidence_root / "ha-smoke-registry-push.log"
-                                tag_result = _run_command(
-                                    ["docker", "tag", addon_image, push_tag],
-                                    log_path=tag_log,
-                                    timeout_seconds=60,
-                                )
-                                push_result = _run_command(
-                                    ["docker", "push", push_tag],
-                                    log_path=push_log,
-                                    timeout_seconds=180,
-                                )
-                                if (
-                                    tag_result.returncode == 0
-                                    and push_result.returncode == 0
-                                ):
-                                    _set_subsystem(
-                                        report,
-                                        "ha_harness",
-                                        status="blocked",
-                                        code="HA_HARNESS_INSTALL_UNVERIFIED",
-                                        detail=(
-                                            "compose harness booted and the add-on image was pushed to the local registry, "
-                                            "but Supervisor add-on installation/startup could not be verified non-interactively in this workspace"
-                                        ),
-                                        logs=[
-                                            compose_config_log,
-                                            compose_up_log,
-                                            tag_log,
-                                            push_log,
-                                        ],
-                                    )
-                                else:
-                                    _set_subsystem(
-                                        report,
-                                        "ha_harness",
-                                        status="blocked",
-                                        code="HA_HARNESS_BOOT_BLOCKED",
-                                        detail=push_result.stderr.strip()
-                                        or push_result.stdout.strip()
-                                        or tag_result.stderr.strip()
-                                        or tag_result.stdout.strip()
-                                        or "local add-on registry registration failed",
-                                        logs=[
-                                            compose_config_log,
-                                            compose_up_log,
-                                            tag_log,
-                                            push_log,
-                                        ],
-                                    )
-                            else:
+                            if supervisor_container is None:
                                 _set_subsystem(
                                     report,
                                     "ha_harness",
                                     status="blocked",
-                                    code="HA_HARNESS_INSTALL_UNVERIFIED",
-                                    detail=(
-                                        "compose harness booted, but no addon_registry service was available for local image registration and Supervisor add-on installation was not verified"
-                                    ),
-                                    logs=[compose_config_log, compose_up_log],
+                                    code="HA_HARNESS_SUPERVISOR_FLOW_BLOCKED",
+                                    detail=container_detail
+                                    or "could not resolve the supervisor container",
+                                    logs=[
+                                        compose_config_log,
+                                        compose_up_log,
+                                        *container_logs,
+                                    ],
                                 )
+                            else:
+                                addon_version = _load_addon_version(
+                                    DEFAULT_ADDON_SOURCE
+                                )
+                                registry_service_host = _resolve_registry_service_host(
+                                    harness_spec
+                                )
+                                if registry_service_host is None:
+                                    _set_subsystem(
+                                        report,
+                                        "ha_harness",
+                                        status="blocked",
+                                        code="HA_HARNESS_REPOSITORY_UNAVAILABLE",
+                                        detail="compose harness did not expose an addon_registry service for Supervisor-local pulls",
+                                        logs=[
+                                            compose_config_log,
+                                            compose_up_log,
+                                            *container_logs,
+                                        ],
+                                    )
+                                else:
+                                    (
+                                        pushed,
+                                        image_reference,
+                                        image_logs,
+                                        image_detail,
+                                    ) = _push_addon_image_to_registry(
+                                        addon_image=addon_image,
+                                        addon_slug=addon_slug,
+                                        addon_version=addon_version,
+                                        push_host="localhost",
+                                        image_host=registry_service_host,
+                                        evidence_root=evidence_root,
+                                    )
+                                    if not pushed:
+                                        _set_subsystem(
+                                            report,
+                                            "ha_harness",
+                                            status="blocked",
+                                            code="HA_HARNESS_BOOT_BLOCKED",
+                                            detail=image_detail,
+                                            logs=[
+                                                compose_config_log,
+                                                compose_up_log,
+                                                *container_logs,
+                                                *image_logs,
+                                            ],
+                                        )
+                                    else:
+                                        copied, repo_logs, repo_detail = (
+                                            _copy_local_addon_repository(
+                                                supervisor_container=supervisor_container,
+                                                addon_slug=addon_slug,
+                                                image_reference=image_reference,
+                                                evidence_root=evidence_root,
+                                            )
+                                        )
+                                        if not copied:
+                                            _set_subsystem(
+                                                report,
+                                                "ha_harness",
+                                                status="blocked",
+                                                code="HA_HARNESS_REPOSITORY_UNAVAILABLE",
+                                                detail=repo_detail,
+                                                logs=[
+                                                    compose_config_log,
+                                                    compose_up_log,
+                                                    *container_logs,
+                                                    *image_logs,
+                                                    *repo_logs,
+                                                ],
+                                            )
+                                        else:
+                                            supervisor_attempt = _run_supervisor_managed_addon_attempt(
+                                                supervisor_container=supervisor_container,
+                                                addon_slug=addon_slug,
+                                                evidence_root=evidence_root,
+                                            )
+                                            _set_subsystem(
+                                                report,
+                                                "ha_harness",
+                                                status=str(
+                                                    supervisor_attempt["status"]
+                                                ),
+                                                code=str(supervisor_attempt["code"]),
+                                                detail=str(
+                                                    supervisor_attempt["detail"]
+                                                ),
+                                                artifacts=cast(
+                                                    list[Path],
+                                                    supervisor_attempt["artifacts"],
+                                                ),
+                                                logs=[
+                                                    compose_config_log,
+                                                    compose_up_log,
+                                                    *container_logs,
+                                                    *image_logs,
+                                                    *repo_logs,
+                                                    *cast(
+                                                        list[Path],
+                                                        supervisor_attempt["logs"],
+                                                    ),
+                                                ],
+                                            )
+                                            if isinstance(artifacts, dict) and cast(
+                                                list[Path],
+                                                supervisor_attempt["artifacts"],
+                                            ):
+                                                artifacts["ha_supervisor_attempt"] = (
+                                                    str(
+                                                        cast(
+                                                            list[Path],
+                                                            supervisor_attempt[
+                                                                "artifacts"
+                                                            ],
+                                                        )[0]
+                                                    )
+                                                )
                     finally:
                         _ = _run_command(
                             [

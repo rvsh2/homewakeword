@@ -6,7 +6,13 @@ from tempfile import TemporaryDirectory
 
 import yaml
 
-from scripts.ha_smoke import DEFAULT_HARNESS, ha_smoke, run_replay_probe
+from scripts.ha_smoke import (
+    DEFAULT_HARNESS,
+    _prepare_supervisor_share,
+    _resolve_registry_service_host,
+    ha_smoke,
+    run_replay_probe,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -22,7 +28,20 @@ def test_supervised_harness_shape_is_present() -> None:
     assert {"ha_supervisor", "homeassistant", "addon_registry"}.issubset(services)
     supervisor = services["ha_supervisor"]
     assert supervisor["privileged"] is True
+    assert supervisor["environment"]["SUPERVISOR_MACHINE"] == "generic-x86-64"
+    assert (
+        supervisor["environment"]["SUPERVISOR_SHARE"]
+        == "/opt/homewake/.sisyphus/ha-supervised/share"
+    )
     assert any("/var/run/docker.sock" in str(entry) for entry in supervisor["volumes"])
+    assert any(
+        "/opt/homewake/.sisyphus/ha-supervised/share" in str(entry)
+        for entry in supervisor["volumes"]
+    )
+    assert _resolve_registry_service_host(raw) == "localhost.localdomain:5000"
+    registry = services["addon_registry"]
+    assert registry["environment"]["REGISTRY_HTTP_ADDR"] == "0.0.0.0:80"
+    assert "5000:80" in registry["ports"]
 
 
 def test_smoke_report_emits_explicit_subsystem_results() -> None:
@@ -57,12 +76,30 @@ def test_smoke_report_emits_explicit_subsystem_results() -> None:
         "HA_HARNESS_INVALID",
         "HA_HARNESS_MISSING",
         "HA_HARNESS_BOOT_BLOCKED",
-        "HA_HARNESS_INSTALL_UNVERIFIED",
+        "HA_HARNESS_REPOSITORY_UNAVAILABLE",
+        "HA_HARNESS_INSTALL_FAILED",
+        "HA_HARNESS_START_BLOCKED",
+        "HA_HARNESS_SUPERVISOR_FLOW_BLOCKED",
+        "HA_HARNESS_ADDON_STARTED",
         "NOT_RUN",
     }
     assert Path(persisted["artifacts"]["replay_positive"]).exists()
     assert Path(persisted["artifacts"]["replay_negative"]).exists()
     assert Path(persisted["artifacts"]["wyoming_self_test"]).exists()
+
+
+def test_prepare_supervisor_share_creates_nested_share_tree() -> None:
+    with TemporaryDirectory() as tmpdir:
+        share_root = Path(tmpdir) / "share-root"
+        _prepare_supervisor_share(
+            share_root, addon_install_slug="local_homewake-bcresnet"
+        )
+
+        assert (share_root / "share").is_dir()
+        assert (share_root / "addons" / "data" / "local_homewake-bcresnet").is_dir()
+        assert (
+            share_root / "cid_files" / "addon_local_homewake-bcresnet.cid"
+        ).is_file()
 
 
 def test_missing_artifact_is_classified_as_artifact_loading() -> None:
