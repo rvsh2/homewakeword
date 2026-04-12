@@ -1,0 +1,42 @@
+name: homewake-ha-supervised
+
+services:
+  ha_supervisor:
+    image: ghcr.io/home-assistant/amd64-hassio-supervisor:latest
+    privileged: true
+    restart: "no"
+    environment:
+      SUPERVISOR_SHARE: /data/share
+      SUPERVISOR_NAME: homewake-smoke
+    volumes:
+      - ha_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - ha_supervised
+
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    restart: "no"
+    depends_on:
+      - ha_supervisor
+    volumes:
+      - ha_config:/config
+    ports:
+      - "8123:8123"
+    networks:
+      - ha_supervised
+
+  addon_registry:
+    image: registry:2
+    restart: "no"
+    ports:
+      - "5000:5000"
+    networks:
+      - ha_supervised
+
+volumes:
+  ha_data: {}
+  ha_config: {}
+
+networks:
+  ha_supervised: {}
