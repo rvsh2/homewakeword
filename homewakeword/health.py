@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 
-from homewake.registry import ModelInventoryRecord
+from homewakeword.registry import ModelInventoryRecord
 
 
 class HealthStatus(StrEnum):
@@ -34,7 +34,7 @@ class ComponentHealth:
 
 @dataclass(frozen=True, slots=True)
 class RuntimeHealth:
-    """Aggregate health snapshot for the HomeWake runtime."""
+    """Aggregate health snapshot for the HomeWakeWord runtime."""
 
     overall: HealthStatus
     components: tuple[ComponentHealth, ...]

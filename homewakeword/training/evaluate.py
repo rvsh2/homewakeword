@@ -5,14 +5,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from homewake.audio import iter_wave_chunks
-from homewake.config import HomeWakeConfig
-from homewake.detector.bcresnet import BCResNetDetector
-from homewake.events import DetectionEventType
-from homewake.server.wyoming import WyomingRuntime
+from homewakeword.audio import iter_wave_chunks
+from homewakeword.config import HomeWakeWordConfig
+from homewakeword.detector.bcresnet import BCResNetDetector
+from homewakeword.events import DetectionEventType
+from homewakeword.server.wyoming import WyomingRuntime
 
 if TYPE_CHECKING:
-    from homewake.registry import ModelManifest
+    from homewakeword.registry import ModelManifest
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,7 +44,7 @@ def _run_detection(manifest: ModelManifest, *, input_path) -> DetectionSummary:
         audio_config=manifest.audio,
     )
     runtime = WyomingRuntime(
-        config=HomeWakeConfig(
+        config=HomeWakeWordConfig(
             audio=manifest.audio, detector=manifest.detector_config()
         ),
         detector=detector,

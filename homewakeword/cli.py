@@ -1,4 +1,4 @@
-"""Command line entrypoint for the HomeWake package."""
+"""Command line entrypoint for the HomeWakeWord package."""
 
 from __future__ import annotations
 
@@ -12,16 +12,16 @@ import threading
 import time
 from typing import cast
 
-from homewake.config import (
+from homewakeword.config import (
     CustomModelImportConfig,
     DetectorConfig,
-    HomeWakeConfig,
+    HomeWakeWordConfig,
     WyomingServerConfig,
 )
-from homewake.detector.bcresnet import BCResNetRuntimeError
-from homewake.registry import ManifestValidationError
-from homewake.runtime import build_service
-from homewake.selftest import run_self_test
+from homewakeword.detector.bcresnet import BCResNetRuntimeError
+from homewakeword.registry import ManifestValidationError
+from homewakeword.runtime import build_service
+from homewakeword.selftest import run_self_test
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,57 +39,57 @@ class ServeArgs:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the HomeWake CLI parser."""
+    """Build the HomeWakeWord CLI parser."""
 
     parser = argparse.ArgumentParser(
-        prog="python -m homewake.cli",
-        description="HomeWake Wyoming-facing runtime shell.",
+        prog="python -m homewakeword.cli",
+        description="HomeWakeWord Wyoming-facing runtime shell.",
     )
     subparsers = parser.add_subparsers(dest="command")
 
     serve = subparsers.add_parser("serve", help="Start the Wyoming service")
     _ = serve.add_argument(
-        "--host", default=HomeWakeConfig().server.host, help="Wyoming bind host"
+        "--host", default=HomeWakeWordConfig().server.host, help="Wyoming bind host"
     )
     _ = serve.add_argument(
         "--port",
         type=int,
-        default=HomeWakeConfig().server.port,
+        default=HomeWakeWordConfig().server.port,
         help="Wyoming bind port",
     )
     _ = serve.add_argument(
         "--detector-backend",
-        default=HomeWakeConfig().detector.backend,
+        default=HomeWakeWordConfig().detector.backend,
         help="Detector backend identifier",
     )
     _ = serve.add_argument(
         "--manifest",
         type=Path,
-        default=HomeWakeConfig().detector.manifest_path,
+        default=HomeWakeWordConfig().detector.manifest_path,
         help="Path to the manifest/registry file",
     )
     _ = serve.add_argument(
         "--custom-models",
         action=argparse.BooleanOptionalAction,
-        default=HomeWakeConfig().custom_models.enabled,
+        default=HomeWakeWordConfig().custom_models.enabled,
         help="Enable custom bundle imports from the primary shared directory",
     )
     _ = serve.add_argument(
         "--custom-model-dir",
         type=Path,
-        default=HomeWakeConfig().custom_models.directory,
+        default=HomeWakeWordConfig().custom_models.directory,
         help="Primary custom model bundle directory",
     )
     _ = serve.add_argument(
         "--openwakeword-compat",
         action=argparse.BooleanOptionalAction,
-        default=HomeWakeConfig().custom_models.openwakeword_compat_enabled,
+        default=HomeWakeWordConfig().custom_models.openwakeword_compat_enabled,
         help="Enable optional compatibility imports from /share/openwakeword",
     )
     _ = serve.add_argument(
         "--openwakeword-model-dir",
         type=Path,
-        default=HomeWakeConfig().custom_models.openwakeword_directory,
+        default=HomeWakeWordConfig().custom_models.openwakeword_directory,
         help="Compatibility custom model directory",
     )
     _ = serve.add_argument(
@@ -121,8 +121,8 @@ def _parse_serve_args(namespace: argparse.Namespace) -> ServeArgs:
     )
 
 
-def _build_config(args: ServeArgs) -> HomeWakeConfig:
-    return HomeWakeConfig(
+def _build_config(args: ServeArgs) -> HomeWakeWordConfig:
+    return HomeWakeWordConfig(
         detector=DetectorConfig(
             backend=args.detector_backend,
             manifest_path=args.manifest,
@@ -188,7 +188,7 @@ def _serve(args: argparse.Namespace) -> int:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Run the requested HomeWake CLI command."""
+    """Run the requested HomeWakeWord CLI command."""
 
     parser = build_parser()
     args = parser.parse_args(argv)

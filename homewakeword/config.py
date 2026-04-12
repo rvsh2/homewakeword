@@ -1,4 +1,4 @@
-"""Runtime configuration contracts for HomeWake."""
+"""Runtime configuration contracts for HomeWakeWord."""
 
 from __future__ import annotations
 
@@ -74,7 +74,7 @@ class CustomModelImportConfig:
     """Filesystem import settings for validated custom model bundles."""
 
     enabled: bool = False
-    directory: Path = Path("/share/homewake/models")
+    directory: Path = Path("/share/homewakeword/models")
     openwakeword_compat_enabled: bool = False
     openwakeword_directory: Path = Path("/share/openwakeword")
 
@@ -88,7 +88,7 @@ class WyomingServerConfig:
 
 
 @dataclass(frozen=True, slots=True)
-class HomeWakeConfig:
+class HomeWakeWordConfig:
     """Top-level application configuration passed between layers."""
 
     audio: AudioInputConfig = field(default_factory=AudioInputConfig)

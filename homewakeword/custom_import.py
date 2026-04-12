@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from homewake.config import CustomModelImportConfig
-from homewake.registry import ManifestValidationError, ModelManifest, ModelRegistry, load_manifest
+from homewakeword.config import CustomModelImportConfig
+from homewakeword.registry import ManifestValidationError, ModelManifest, ModelRegistry, load_manifest
 
 
 @dataclass(frozen=True, slots=True)

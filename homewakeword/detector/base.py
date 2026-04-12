@@ -1,11 +1,11 @@
-"""Detector-neutral interfaces for HomeWake wake word backends."""
+"""Detector-neutral interfaces for HomeWakeWord wake word backends."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Protocol
 
-from homewake.audio import AudioChunk
+from homewakeword.audio import AudioChunk
 
 
 @dataclass(frozen=True, slots=True)

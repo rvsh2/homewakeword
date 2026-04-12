@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 
-from homewake.detector.base import DetectionDecision
+from homewakeword.detector.base import DetectionDecision
 
 
 class DetectionEventType(StrEnum):

@@ -4,20 +4,20 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from homewake.audio import (
+from homewakeword.audio import (
     AudioChunk,
     AudioFormatError,
     FrontendFeatures,
     RollingAudioWindow,
     frontend_features_from_window,
 )
-from homewake.config import AudioInputConfig, DetectorConfig
-from homewake.detector.base import DetectionDecision
-from homewake.detector.streaming import (
+from homewakeword.config import AudioInputConfig, DetectorConfig
+from homewakeword.detector.base import DetectionDecision
+from homewakeword.detector.streaming import (
     DetectorLoopCounters,
     StreamingDetectionStateMachine,
 )
-from homewake.registry import ManifestValidationError, ModelManifest, validate_manifest
+from homewakeword.registry import ManifestValidationError, ModelManifest, validate_manifest
 
 
 class BCResNetRuntimeError(RuntimeError):

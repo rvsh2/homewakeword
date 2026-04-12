@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from homewake.detector.base import DetectorRuntimeState
+from homewakeword.detector.base import DetectorRuntimeState
 
 DEFAULT_CONSECUTIVE_HITS = 3
 

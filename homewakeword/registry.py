@@ -12,7 +12,7 @@ from typing import Any
 
 import yaml
 
-from homewake.config import AudioInputConfig, DetectorConfig, LogMelFrontendConfig
+from homewakeword.config import AudioInputConfig, DetectorConfig, LogMelFrontendConfig
 
 SUPPORTED_BACKEND = "bcresnet"
 DEFAULT_FRAMEWORK = "tflite"

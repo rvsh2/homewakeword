@@ -7,9 +7,9 @@ import json
 from pathlib import Path
 import time
 
-from homewake.audio import AudioChunk, floats_to_pcm16le
-from homewake.registry import ModelInventoryRecord
-from homewake.runtime import HomeWakeService, build_runtime_report
+from homewakeword.audio import AudioChunk, floats_to_pcm16le
+from homewakeword.registry import ModelInventoryRecord
+from homewakeword.runtime import HomeWakeWordService, build_runtime_report
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,7 +50,7 @@ class SelfTestResult:
         }
 
 
-def _loud_chunk(service: HomeWakeService) -> AudioChunk:
+def _loud_chunk(service: HomeWakeWordService) -> AudioChunk:
     samples = [0.9] * service.config.audio.frame_samples
     return AudioChunk(
         pcm=floats_to_pcm16le(samples),
@@ -61,7 +61,7 @@ def _loud_chunk(service: HomeWakeService) -> AudioChunk:
 
 
 def run_self_test(
-    service: HomeWakeService, report_path: Path | None = None
+    service: HomeWakeWordService, report_path: Path | None = None
 ) -> SelfTestResult:
     """Exercise startup, describe, audio, detection, and shutdown paths."""
 

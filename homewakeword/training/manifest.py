@@ -8,9 +8,9 @@ from typing import Any
 
 import yaml
 
-from homewake.audio import AudioFormatError, iter_wave_chunks
-from homewake.config import AudioInputConfig, LogMelFrontendConfig
-from homewake.registry import (
+from homewakeword.audio import AudioFormatError, iter_wave_chunks
+from homewakeword.config import AudioInputConfig, LogMelFrontendConfig
+from homewakeword.registry import (
     ArtifactProvenance,
     EvaluationStatus,
     ModelManifest,

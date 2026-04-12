@@ -10,19 +10,19 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Self
 
-from homewake.audio import AudioChunk
-from homewake.config import HomeWakeConfig, WyomingServerConfig
-from homewake.detector.base import WakeWordDetector
-from homewake.events import DetectionEvent, DetectionEventType
-from homewake.health import RuntimeHealth, build_runtime_health
-from homewake.registry import ModelInventoryRecord
+from homewakeword.audio import AudioChunk
+from homewakeword.config import HomeWakeWordConfig, WyomingServerConfig
+from homewakeword.detector.base import WakeWordDetector
+from homewakeword.events import DetectionEvent, DetectionEventType
+from homewakeword.health import RuntimeHealth, build_runtime_health
+from homewakeword.registry import ModelInventoryRecord
 
 
 @dataclass(slots=True)
 class WyomingRuntime:
     """Binds protocol configuration to a detector contract."""
 
-    config: HomeWakeConfig
+    config: HomeWakeWordConfig
     detector: WakeWordDetector
 
     def handle_audio_chunk(self, chunk: AudioChunk) -> DetectionEvent:

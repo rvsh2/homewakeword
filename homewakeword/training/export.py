@@ -10,9 +10,9 @@ from shutil import copy2
 
 import yaml
 
-from homewake.registry import EvaluationStatus
-from homewake.training.evaluate import EvaluationSummary
-from homewake.training.manifest import (
+from homewakeword.registry import EvaluationStatus
+from homewakeword.training.evaluate import EvaluationSummary
+from homewakeword.training.manifest import (
     CustomTrainingConfig,
     DatasetSummary,
     build_training_manifest_mapping,
@@ -36,7 +36,7 @@ def _artifact_payload(
     dataset_summary: DatasetSummary,
 ) -> bytes:
     payload = {
-        "format": "homewake-bcresnet-custom-export",
+        "format": "homewakeword-bcresnet-custom-export",
         "model": {
             "model_id": config.model_id,
             "wake_word": config.wake_word,

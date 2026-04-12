@@ -12,7 +12,7 @@ import struct
 from typing import Iterable
 import wave
 
-from homewake.config import AudioInputConfig, LogMelFrontendConfig
+from homewakeword.config import AudioInputConfig, LogMelFrontendConfig
 
 
 class AudioFormatError(ValueError):

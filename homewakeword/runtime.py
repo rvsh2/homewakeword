@@ -1,4 +1,4 @@
-"""Package-level composition for HomeWake runtime wiring."""
+"""Package-level composition for HomeWakeWord runtime wiring."""
 
 from __future__ import annotations
 
@@ -8,18 +8,18 @@ import resource
 from pathlib import Path
 from typing import Any
 
-from homewake.config import DetectorConfig, HomeWakeConfig
-from homewake.custom_import import CustomModelImportResult, import_custom_model_bundles
-from homewake.detector.bcresnet import BCResNetDetector
-from homewake.health import build_runtime_health
-from homewake.registry import (
+from homewakeword.config import DetectorConfig, HomeWakeWordConfig
+from homewakeword.custom_import import CustomModelImportResult, import_custom_model_bundles
+from homewakeword.detector.bcresnet import BCResNetDetector
+from homewakeword.health import build_runtime_health
+from homewakeword.registry import (
     ModelInventoryRecord,
     ModelManifest,
     ModelRegistry,
     load_registry,
     merge_registries,
 )
-from homewake.server.wyoming import WyomingRuntime, WyomingServer
+from homewakeword.server.wyoming import WyomingRuntime, WyomingServer
 
 
 DEFAULT_MANIFEST_PATH = Path(__file__).resolve().parents[1] / "models" / "manifest.yaml"
@@ -34,10 +34,10 @@ _SENSITIVE_KEY_MARKERS = (
 
 
 @dataclass(frozen=True, slots=True)
-class HomeWakeService:
+class HomeWakeWordService:
     """Composed runtime service with registry-backed protocol metadata."""
 
-    config: HomeWakeConfig
+    config: HomeWakeWordConfig
     registry: ModelRegistry
     manifest: ModelManifest
     inventory: tuple[ModelInventoryRecord, ...]
@@ -46,18 +46,18 @@ class HomeWakeService:
     server: WyomingServer
 
 
-def resolve_manifest_path(config: HomeWakeConfig) -> Path:
+def resolve_manifest_path(config: HomeWakeWordConfig) -> Path:
     """Resolve the manifest path used by runtime composition."""
 
     return (config.detector.manifest_path or DEFAULT_MANIFEST_PATH).resolve()
 
 
 def build_service_config(
-    config: HomeWakeConfig, manifest: ModelManifest
-) -> HomeWakeConfig:
+    config: HomeWakeWordConfig, manifest: ModelManifest
+) -> HomeWakeWordConfig:
     """Merge manifest-backed detector defaults into runtime config."""
 
-    return HomeWakeConfig(
+    return HomeWakeWordConfig(
         audio=manifest.audio,
         detector=DetectorConfig(
             backend=manifest.backend,
@@ -95,7 +95,7 @@ def _sanitize_value(value: Any, *, key: str | None = None) -> Any:
     return value
 
 
-def build_config_echo(config: HomeWakeConfig) -> dict[str, object]:
+def build_config_echo(config: HomeWakeWordConfig) -> dict[str, object]:
     """Render a compact config echo that is safe to expose in reports."""
 
     payload = _sanitize_value(config)
@@ -153,7 +153,7 @@ def _classification_from_overall(overall: str) -> str:
 
 
 def collect_runtime_diagnostics(
-    service: HomeWakeService,
+    service: HomeWakeWordService,
     *,
     startup_duration_ms: float | None = None,
     notes: list[str] | None = None,
@@ -193,7 +193,7 @@ def collect_runtime_diagnostics(
 
 
 def build_runtime_report(
-    service: HomeWakeService,
+    service: HomeWakeWordService,
     *,
     startup_duration_ms: float | None = None,
     notes: list[str] | None = None,
@@ -216,7 +216,7 @@ def build_runtime_report(
 
 
 def build_startup_failure_report(
-    config: HomeWakeConfig,
+    config: HomeWakeWordConfig,
     *,
     error: BaseException | str,
     startup_duration_ms: float | None = None,
@@ -252,7 +252,7 @@ def build_startup_failure_report(
     return payload
 
 
-def build_service(config: HomeWakeConfig) -> HomeWakeService:
+def build_service(config: HomeWakeWordConfig) -> HomeWakeWordService:
     """Build a Wyoming-facing service from manifest-backed runtime inputs."""
 
     manifest_path = resolve_manifest_path(config)
@@ -278,7 +278,7 @@ def build_service(config: HomeWakeConfig) -> HomeWakeService:
         inventory=inventory,
         config_echo=config_echo,
     )
-    return HomeWakeService(
+    return HomeWakeWordService(
         config=service_config,
         registry=registry,
         manifest=manifest,

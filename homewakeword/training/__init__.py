@@ -1,12 +1,12 @@
 """Offline-only helpers for custom wake-word training flows."""
 
-from homewake.training.evaluate import EvaluationSummary, evaluate_holdouts
-from homewake.training.export import (
+from homewakeword.training.evaluate import EvaluationSummary, evaluate_holdouts
+from homewakeword.training.export import (
     ExportBundle,
     export_artifact,
     write_manifest_bundle,
 )
-from homewake.training.manifest import (
+from homewakeword.training.manifest import (
     CustomTrainingConfig,
     DatasetSummary,
     TrainingValidationError,
