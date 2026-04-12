@@ -12,7 +12,7 @@ if [[ "$#" -gt 0 ]]; then
 fi
 
 if [[ -f "$OPTIONS_FILE" ]]; then
-  exec python - "$OPTIONS_FILE" <<'PY'
+  exec python - "$OPTIONS_FILE" <<'PYADDON'
 from __future__ import annotations
 
 import json
@@ -21,16 +21,26 @@ import sys
 from pathlib import Path
 
 options_path = Path(sys.argv[1])
-options = json.loads(options_path.read_text(encoding='utf-8'))
-args = ['python', '-m', 'homewake.cli', 'serve']
-args.extend(['--host', str(options.get('host', '0.0.0.0'))])
-args.extend(['--port', str(options.get('port', 10700))])
-args.extend(['--detector-backend', str(options.get('detector_backend', 'bcresnet'))])
-manifest = options.get('manifest')
+options = json.loads(options_path.read_text(encoding="utf-8"))
+args = ["python", "-m", "homewake.cli", "serve"]
+args.extend(["--host", str(options.get("host", "0.0.0.0"))])
+args.extend(["--port", str(options.get("port", 10700))])
+args.extend(["--detector-backend", str(options.get("detector_backend", "bcresnet"))])
+manifest = options.get("manifest")
 if manifest:
-    args.extend(['--manifest', str(manifest)])
+    args.extend(["--manifest", str(manifest)])
+if options.get("custom_models", True):
+    args.append("--custom-models")
+else:
+    args.append("--no-custom-models")
+args.extend(["--custom-model-dir", str(options.get("custom_model_dir", "/share/homewake/models"))])
+if options.get("openwakeword_compat", False):
+    args.append("--openwakeword-compat")
+else:
+    args.append("--no-openwakeword-compat")
+args.extend(["--openwakeword-model-dir", str(options.get("openwakeword_model_dir", "/share/openwakeword"))])
 os.execvp(args[0], args)
-PY
+PYADDON
 fi
 
-exec python -m homewake.cli serve --host 0.0.0.0 --port 10700
+exec python -m homewake.cli serve --host 0.0.0.0 --port 10700 --custom-models --custom-model-dir /share/homewake/models --no-openwakeword-compat --openwakeword-model-dir /share/openwakeword

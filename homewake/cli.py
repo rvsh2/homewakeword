@@ -12,7 +12,12 @@ import threading
 import time
 from typing import cast
 
-from homewake.config import DetectorConfig, HomeWakeConfig, WyomingServerConfig
+from homewake.config import (
+    CustomModelImportConfig,
+    DetectorConfig,
+    HomeWakeConfig,
+    WyomingServerConfig,
+)
 from homewake.detector.bcresnet import BCResNetRuntimeError
 from homewake.registry import ManifestValidationError
 from homewake.runtime import build_service
@@ -25,6 +30,10 @@ class ServeArgs:
     port: int
     detector_backend: str
     manifest: Path | None
+    custom_models: bool
+    custom_model_dir: Path
+    openwakeword_compat: bool
+    openwakeword_model_dir: Path
     self_test: bool
     report: Path | None
 
@@ -60,6 +69,30 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to the manifest/registry file",
     )
     _ = serve.add_argument(
+        "--custom-models",
+        action=argparse.BooleanOptionalAction,
+        default=HomeWakeConfig().custom_models.enabled,
+        help="Enable custom bundle imports from the primary shared directory",
+    )
+    _ = serve.add_argument(
+        "--custom-model-dir",
+        type=Path,
+        default=HomeWakeConfig().custom_models.directory,
+        help="Primary custom model bundle directory",
+    )
+    _ = serve.add_argument(
+        "--openwakeword-compat",
+        action=argparse.BooleanOptionalAction,
+        default=HomeWakeConfig().custom_models.openwakeword_compat_enabled,
+        help="Enable optional compatibility imports from /share/openwakeword",
+    )
+    _ = serve.add_argument(
+        "--openwakeword-model-dir",
+        type=Path,
+        default=HomeWakeConfig().custom_models.openwakeword_directory,
+        help="Compatibility custom model directory",
+    )
+    _ = serve.add_argument(
         "--self-test",
         action="store_true",
         help="Run a non-interactive startup and detection self-test",
@@ -79,6 +112,10 @@ def _parse_serve_args(namespace: argparse.Namespace) -> ServeArgs:
         port=cast(int, namespace.port),
         detector_backend=cast(str, namespace.detector_backend),
         manifest=cast(Path | None, namespace.manifest),
+        custom_models=cast(bool, namespace.custom_models),
+        custom_model_dir=cast(Path, namespace.custom_model_dir),
+        openwakeword_compat=cast(bool, namespace.openwakeword_compat),
+        openwakeword_model_dir=cast(Path, namespace.openwakeword_model_dir),
         self_test=cast(bool, namespace.self_test),
         report=cast(Path | None, namespace.report),
     )
@@ -89,6 +126,12 @@ def _build_config(args: ServeArgs) -> HomeWakeConfig:
         detector=DetectorConfig(
             backend=args.detector_backend,
             manifest_path=args.manifest,
+        ),
+        custom_models=CustomModelImportConfig(
+            enabled=args.custom_models,
+            directory=args.custom_model_dir,
+            openwakeword_compat_enabled=args.openwakeword_compat,
+            openwakeword_directory=args.openwakeword_model_dir,
         ),
         server=WyomingServerConfig(host=args.host, port=args.port),
     )
