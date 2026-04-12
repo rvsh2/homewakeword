@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 import hashlib
 import json
 from pathlib import Path
+from shutil import copy2
 
 import yaml
 
@@ -24,6 +25,9 @@ class ExportBundle:
     artifact_path: Path
     manifest_path: Path
     manifest_snippet_path: Path
+    fixtures_dir: Path
+    positive_fixture_path: Path
+    negative_fixture_path: Path
     artifact_sha256: str
 
 
@@ -73,11 +77,21 @@ def export_artifact(
     artifact_path.write_bytes(artifact_bytes)
     artifact_sha256 = hashlib.sha256(artifact_bytes).hexdigest()
 
+    fixtures_dir = resolved_output_dir / "fixtures"
+    fixtures_dir.mkdir(parents=True, exist_ok=True)
+    positive_fixture_path = fixtures_dir / config.dataset.holdout_positive.name
+    negative_fixture_path = fixtures_dir / config.dataset.holdout_negative.name
+    copy2(config.dataset.holdout_positive, positive_fixture_path)
+    copy2(config.dataset.holdout_negative, negative_fixture_path)
+
     return ExportBundle(
         output_dir=resolved_output_dir,
         artifact_path=artifact_path,
         manifest_path=resolved_output_dir / "manifest.yaml",
         manifest_snippet_path=resolved_output_dir / "manifest_snippet.yaml",
+        fixtures_dir=fixtures_dir,
+        positive_fixture_path=positive_fixture_path,
+        negative_fixture_path=negative_fixture_path,
         artifact_sha256=artifact_sha256,
     )
 
@@ -95,6 +109,8 @@ def write_manifest_bundle(
         artifact_name=bundle.artifact_path.name,
         artifact_sha256=bundle.artifact_sha256,
         evaluation_status=evaluation_status,
+        positive_fixture_path=bundle.positive_fixture_path.relative_to(bundle.output_dir),
+        negative_fixture_path=bundle.negative_fixture_path.relative_to(bundle.output_dir),
     )
     rendered = yaml.safe_dump(manifest_mapping, sort_keys=False)
     bundle.manifest_path.write_text(rendered, encoding="utf-8")

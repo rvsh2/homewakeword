@@ -314,6 +314,8 @@ def build_training_manifest_mapping(
     artifact_name: str,
     artifact_sha256: str,
     evaluation_status: EvaluationStatus,
+    positive_fixture_path: Path,
+    negative_fixture_path: Path,
 ) -> dict[str, object]:
     return {
         "model_id": config.model_id,
@@ -333,8 +335,8 @@ def build_training_manifest_mapping(
         },
         "evaluation": {
             "status": evaluation_status.value,
-            "positive_fixture": str(config.dataset.holdout_positive.resolve()),
-            "negative_fixture": str(config.dataset.holdout_negative.resolve()),
+            "positive_fixture": str(positive_fixture_path),
+            "negative_fixture": str(negative_fixture_path),
         },
         "audio": {
             "sample_rate_hz": config.audio.sample_rate_hz,

@@ -29,6 +29,8 @@ def test_custom_pipeline_exports_runtime_manifest_and_report(tmp_path: Path) -> 
     assert (output_dir / "manifest.yaml").exists()
     assert (output_dir / "manifest_snippet.yaml").exists()
     assert (output_dir / "training_report.json").exists()
+    assert (output_dir / "fixtures" / "alexa_positive.wav").exists()
+    assert (output_dir / "fixtures" / "no_wake_negative.wav").exists()
 
     manifest = load_manifest(output_dir / "manifest.yaml")
     assert manifest.model_id == "custom_fixture_homewake"
@@ -40,6 +42,12 @@ def test_custom_pipeline_exports_runtime_manifest_and_report(tmp_path: Path) -> 
     assert manifest.provenance.provenance_status.value == "unverifiable"
     assert manifest.evaluation is not None
     assert manifest.evaluation.status.value == "validated"
+    assert manifest.evaluation.positive_fixture == (
+        output_dir / "fixtures" / "alexa_positive.wav"
+    ).resolve()
+    assert manifest.evaluation.negative_fixture == (
+        output_dir / "fixtures" / "no_wake_negative.wav"
+    ).resolve()
 
     report = json.loads(
         (output_dir / "training_report.json").read_text(encoding="utf-8")
