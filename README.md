@@ -68,6 +68,72 @@ Default add-on configuration:
 
 After startup, the add-on exposes a Wyoming service that Home Assistant can use for wake word detection.
 
+## How to run it
+
+### Run in Home Assistant
+
+1. Add this repository as a custom add-on repository in Home Assistant.
+2. Install the `homewakeword-bcresnet` add-on.
+3. Start the add-on.
+4. Add the **Wyoming** integration in Home Assistant.
+5. Point Wyoming to the HomeWakeWord host and port `10700`.
+6. Select one of the available wake words in your Assist pipeline.
+
+### Run locally
+
+Install the package:
+
+```bash
+python -m pip install -e .
+```
+
+Start the runtime:
+
+```bash
+python -m homewakeword.cli serve
+```
+
+Run a self-test instead:
+
+```bash
+python -m homewakeword.cli serve --self-test --report /tmp/self-test.json
+```
+
+### Run the add-on image locally
+
+```bash
+docker build -f addon/homewakeword-bcresnet/Dockerfile -t local/homewakeword-bcresnet .
+docker run --rm local/homewakeword-bcresnet --self-test --report /tmp/self-test.json
+```
+
+### Run with Docker Compose
+
+Example `docker-compose.yml`:
+
+```yaml
+services:
+  homewakeword:
+    image: local/homewakeword-bcresnet
+    container_name: homewakeword-bcresnet
+    ports:
+      - "10700:10700"
+    volumes:
+      - ./data:/data
+      - ./share:/share
+    command: ["serve"]
+```
+
+Start it with:
+
+```bash
+docker compose up -d
+```
+
+Then connect Home Assistant Wyoming to:
+
+- host: the machine running Docker
+- port: `10700`
+
 ## Custom wake words
 
 HomeWakeWord supports custom model import.
