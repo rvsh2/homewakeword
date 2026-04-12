@@ -1,9 +1,10 @@
-.PHONY: verify test verify-addon addon-image addon-self-test
+.PHONY: verify test verify-addon addon-image addon-self-test verify-task14 release-dry-run final-gates-help
 
 verify:
 	python -m pytest -q
 	python -m scripts.validate_repo
 	python -m scripts.validate_addon_config --config addon/homewake-bcresnet/config.yaml --options tests/fixtures/addon/options.valid.json
+	$(MAKE) verify-task14
 
 test:
 	python -m pytest -q
@@ -16,3 +17,19 @@ addon-image:
 
 addon-self-test: addon-image
 	docker run --rm local/homewake-bcresnet --self-test --report /tmp/self-test.json
+
+verify-task14:
+	python -m pytest tests/docs tests/release -q
+	python -m scripts.release_dry_run
+	$(MAKE) final-gates-help
+
+release-dry-run:
+	python -m scripts.release_dry_run
+
+final-gates-help:
+	python -m scripts.generate_review --help
+	python -m scripts.commit_with_review --help
+	python -m scripts.verify_plan_compliance --help
+	python -m scripts.review_code_quality --help
+	python -m scripts.final_runtime_validation --help
+	python -m scripts.check_scope_fidelity --help

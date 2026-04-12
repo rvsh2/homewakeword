@@ -15,7 +15,15 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e .
       - run: python -m pytest -q
+      - run: python -m pytest tests/docs tests/release -q
       - run: python -m scripts.validate_repo
       - run: python -m scripts.validate_addon_config --config addon/homewake-bcresnet/config.yaml --options tests/fixtures/addon/options.valid.json
+      - run: python -m scripts.release_dry_run
+      - run: python -m scripts.generate_review --help
+      - run: python -m scripts.commit_with_review --help
+      - run: python -m scripts.verify_plan_compliance --help
+      - run: python -m scripts.review_code_quality --help
+      - run: python -m scripts.final_runtime_validation --help
+      - run: python -m scripts.check_scope_fidelity --help
       - run: docker build -f addon/homewake-bcresnet/Dockerfile -t local/homewake-bcresnet .
       - run: docker run --rm local/homewake-bcresnet --self-test --report /tmp/self-test.json
