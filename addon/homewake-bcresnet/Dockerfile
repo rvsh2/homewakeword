@@ -5,13 +5,23 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY pyproject.toml README.md /app/
-COPY homewake /app/homewake
-COPY models /app/models
-COPY scripts /app/scripts
-COPY addon/homewake-bcresnet/run.sh /usr/local/bin/run.sh
+COPY . /build-context
 
-RUN pip install --no-cache-dir . && chmod +x /usr/local/bin/run.sh
+RUN python -m pip install --no-cache-dir "PyYAML>=6" \
+    && if [ -d /build-context/rootfs/app ]; then \
+         src=/build-context/rootfs/app; \
+         run=/build-context/run.sh; \
+       elif [ -d /build-context/addon/homewake-bcresnet/rootfs/app ]; then \
+         src=/build-context/addon/homewake-bcresnet/rootfs/app; \
+         run=/build-context/addon/homewake-bcresnet/run.sh; \
+       else \
+         echo "missing add-on app bundle in build context" >&2; \
+         exit 1; \
+       fi \
+    && cp -R "$src"/. /app/ \
+    && cp "$run" /usr/local/bin/run.sh \
+    && chmod +x /usr/local/bin/run.sh \
+    && rm -rf /build-context
 
 EXPOSE 10700
 

@@ -1,4 +1,4 @@
-.PHONY: verify test verify-addon addon-image addon-self-test verify-task14 release-dry-run final-gates-help
+.PHONY: verify test verify-addon addon-image addon-self-test addon-builder-test verify-task14 release-dry-run final-gates-help
 
 verify:
 	python -m pytest -q
@@ -17,6 +17,9 @@ addon-image:
 
 addon-self-test: addon-image
 	docker run --rm local/homewake-bcresnet --self-test --report /tmp/self-test.json
+
+addon-builder-test:
+	docker run --rm --privileged -v "/opt/homewake/addon/homewake-bcresnet:/data" -v /var/run/docker.sock:/var/run/docker.sock:ro ghcr.io/home-assistant/amd64-builder:latest --target /data --amd64 --test --image local/homewake-bcresnet-{arch} --docker-hub local
 
 verify-task14:
 	python -m pytest tests/docs tests/release -q

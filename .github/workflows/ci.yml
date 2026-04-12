@@ -27,3 +27,4 @@ jobs:
       - run: python -m scripts.check_scope_fidelity --help
       - run: docker build -f addon/homewake-bcresnet/Dockerfile -t local/homewake-bcresnet .
       - run: docker run --rm local/homewake-bcresnet --self-test --report /tmp/self-test.json
+      - run: docker run --rm --privileged -v "${{ github.workspace }}/addon/homewake-bcresnet:/data" -v /var/run/docker.sock:/var/run/docker.sock:ro ghcr.io/home-assistant/amd64-builder:latest --target /data --amd64 --test --image local/homewake-bcresnet-{arch} --docker-hub local
