@@ -10,7 +10,7 @@ from scripts.validate_release import main, validate_release
 
 FIXTURE_ROOT = Path(__file__).resolve().parents[1] / "fixtures" / "manifests"
 ADDON_CONFIG = (
-    Path(__file__).resolve().parents[2] / "addon" / "homewakeword-bcresnet" / "config.yaml"
+    Path(__file__).resolve().parents[2] / "addon" / "homewakeword" / "config.yaml"
 )
 
 

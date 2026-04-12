@@ -68,7 +68,7 @@ def run_self_test(
     server = service.server
     detection_event = None
     startup_started = time.perf_counter()
-    server.start()
+    server.start(bind_listener=False)
     startup_duration_ms = round((time.perf_counter() - startup_started) * 1000.0, 3)
     try:
         startup_health = build_runtime_report(

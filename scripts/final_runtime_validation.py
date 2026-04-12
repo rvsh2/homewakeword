@@ -25,7 +25,7 @@ from scripts.validate_startup import validate_startup
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_ADDON_CONFIG = REPO_ROOT / "addon" / "homewakeword-bcresnet" / "config.yaml"
+DEFAULT_ADDON_CONFIG = REPO_ROOT / "addon" / "homewakeword" / "config.yaml"
 
 
 def build_parser() -> argparse.ArgumentParser:

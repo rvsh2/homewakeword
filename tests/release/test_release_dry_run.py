@@ -8,7 +8,7 @@ from scripts.release_dry_run import main, release_dry_run
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MANIFEST_PATH = REPO_ROOT / "models" / "manifest.yaml"
-ADDON_CONFIG = REPO_ROOT / "addon" / "homewakeword-bcresnet" / "config.yaml"
+ADDON_CONFIG = REPO_ROOT / "addon" / "homewakeword" / "config.yaml"
 
 
 def test_release_dry_run_reports_non_destructive_publish_plan(tmp_path: Path) -> None:

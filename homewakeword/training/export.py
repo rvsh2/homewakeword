@@ -36,7 +36,7 @@ def _artifact_payload(
     dataset_summary: DatasetSummary,
 ) -> bytes:
     payload = {
-        "format": "homewakeword-bcresnet-custom-export",
+        "format": "homewakeword-custom-export",
         "model": {
             "model_id": config.model_id,
             "wake_word": config.wake_word,

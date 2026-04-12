@@ -307,7 +307,7 @@ def _run_addon_restart_check(attempts: int) -> dict[str, object]:
             "detail": "docker is not available in this workspace; add-on restart check was not executed.",
             "attempts": [],
         }
-    dockerfile = REPO_ROOT / "addon" / "homewakeword-bcresnet" / "Dockerfile"
+    dockerfile = REPO_ROOT / "addon" / "homewakeword" / "Dockerfile"
     if not dockerfile.exists():
         return {
             "status": "blocked",

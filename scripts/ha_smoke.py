@@ -31,8 +31,8 @@ from scripts.replay_stream import main as replay_stream_main
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MANIFEST = REPO_ROOT / "models" / "manifest.yaml"
-DEFAULT_ADDON_DOCKERFILE = REPO_ROOT / "addon" / "homewakeword-bcresnet" / "Dockerfile"
-DEFAULT_ADDON_SOURCE = REPO_ROOT / "addon" / "homewakeword-bcresnet"
+DEFAULT_ADDON_DOCKERFILE = REPO_ROOT / "addon" / "homewakeword" / "Dockerfile"
+DEFAULT_ADDON_SOURCE = REPO_ROOT / "addon" / "homewakeword"
 DEFAULT_HARNESS = (
     REPO_ROOT / "tests" / "harness" / "ha-supervised" / "docker-compose.yml"
 )

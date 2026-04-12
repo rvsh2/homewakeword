@@ -19,7 +19,7 @@ jobs:
       - run: python -m scripts.soak_test --manifest models/manifest.yaml --input-dir tests/fixtures/soak --hours 6 --report .sisyphus/evidence/task-12-soak.json
       - run: python -m pytest tests/docs tests/release -q
       - run: python -m scripts.validate_repo
-      - run: python -m scripts.validate_addon_config --config addon/homewakeword-bcresnet/config.yaml --options tests/fixtures/addon/options.valid.json
+      - run: python -m scripts.validate_addon_config --config addon/homewakeword/config.yaml --options tests/fixtures/addon/options.valid.json
       - run: python -m scripts.release_dry_run
       - run: python -m scripts.generate_review --help
       - run: python -m scripts.commit_with_review --help
@@ -28,7 +28,7 @@ jobs:
       - run: python -m scripts.final_runtime_validation --help
       - run: python -m scripts.check_scope_fidelity --help
       - run: python -m pytest tests/e2e -q
-      - run: docker build -f addon/homewakeword-bcresnet/Dockerfile -t local/homewakeword .
+      - run: docker build -f addon/homewakeword/Dockerfile -t local/homewakeword .
       - run: docker run --rm local/homewakeword --self-test --report /tmp/self-test.json
       - run: python -m scripts.ha_smoke --harness tests/harness/ha-supervised/docker-compose.yml --addon-slug homewakeword --addon-image local/homewakeword --wyoming-port 10400 --report .sisyphus/evidence/ha-smoke.json
-      - run: docker run --rm --privileged -v "${{ github.workspace }}/addon/homewakeword-bcresnet:/data" -v /var/run/docker.sock:/var/run/docker.sock:ro ghcr.io/home-assistant/amd64-builder:latest --target /data --amd64 --test --image local/homewakeword-{arch} --docker-hub local
+      - run: docker run --rm --privileged -v "${{ github.workspace }}/addon/homewakeword:/data" -v /var/run/docker.sock:/var/run/docker.sock:ro ghcr.io/home-assistant/amd64-builder:latest --target /data --amd64 --test --image local/homewakeword-{arch} --docker-hub local

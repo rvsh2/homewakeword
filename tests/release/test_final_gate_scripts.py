@@ -14,7 +14,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 PLAN_PATH = REPO_ROOT / ".sisyphus" / "plans" / "implementation-plan.md"
 EVIDENCE_ROOT = REPO_ROOT / ".sisyphus" / "evidence"
 MANIFEST_PATH = REPO_ROOT / "models" / "manifest.yaml"
-ADDON_CONFIG = REPO_ROOT / "addon" / "homewakeword-bcresnet" / "config.yaml"
+ADDON_CONFIG = REPO_ROOT / "addon" / "homewakeword" / "config.yaml"
 
 
 def test_review_code_quality_passes_for_task14_surface() -> None:

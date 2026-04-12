@@ -6,10 +6,10 @@ import sys
 
 REQUIRED_PATHS = [
     "homewakeword",
-    "addon/homewakeword-bcresnet",
-    "addon/homewakeword-bcresnet/config.yaml",
-    "addon/homewakeword-bcresnet/Dockerfile",
-    "addon/homewakeword-bcresnet/run.sh",
+    "addon/homewakeword",
+    "addon/homewakeword/config.yaml",
+    "addon/homewakeword/Dockerfile",
+    "addon/homewakeword/run.sh",
     "tests",
     "tests/fixtures",
     "tests/fixtures/addon",

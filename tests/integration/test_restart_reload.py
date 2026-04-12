@@ -68,7 +68,7 @@ def _materialize_manifest(source_manifest: Path, target_manifest: Path) -> None:
 def test_repeated_service_start_stop_resets_runtime_state_and_reports_resources() -> (
     None
 ):
-    service = build_service(_build_config(BASE_MANIFEST))
+    service = build_service(_build_config(BASE_MANIFEST, port=0))
 
     startup_durations: list[float] = []
     for _ in range(3):

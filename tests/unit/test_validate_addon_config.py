@@ -9,7 +9,7 @@ FIXTURE_ROOT = Path(__file__).resolve().parents[1] / "fixtures" / "addon"
 CONFIG_PATH = (
     Path(__file__).resolve().parents[2]
     / "addon"
-    / "homewakeword-bcresnet"
+    / "homewakeword"
     / "config.yaml"
 )
 

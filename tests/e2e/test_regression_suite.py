@@ -1,10 +1,17 @@
+# pyright: reportMissingImports=false
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
+import socket
+import subprocess
 from tempfile import TemporaryDirectory
+import time
 
 import yaml
+from wyoming.client import AsyncClient
+from wyoming.info import Describe, Info
 
 from scripts.ha_smoke import (
     DEFAULT_HARNESS,
@@ -17,6 +24,10 @@ from scripts.ha_smoke import (
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EVIDENCE_ROOT = REPO_ROOT / ".sisyphus" / "evidence"
+FIXTURE_MANIFEST = (
+    REPO_ROOT / "tests" / "fixtures" / "manifests" / "ok_nabu_detector.yaml"
+)
+VENV_PYTHON = REPO_ROOT / ".venv" / "bin" / "python"
 
 
 def test_supervised_harness_shape_is_present() -> None:
@@ -153,3 +164,59 @@ def test_missing_artifact_is_classified_as_artifact_loading() -> None:
     assert result["subsystem"] == "artifact_loading"
     assert result["code"] == "ARTIFACT_LOADING_FAILURE"
     assert "model artifact does not exist" in str(result["detail"])
+
+
+def test_cli_serve_exposes_real_wyoming_tcp_listener() -> None:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = int(sock.getsockname()[1])
+    process = subprocess.Popen(
+        [
+            str(VENV_PYTHON),
+            "-m",
+            "homewakeword.cli",
+            "serve",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            str(port),
+            "--manifest",
+            str(FIXTURE_MANIFEST),
+        ],
+        cwd=REPO_ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        deadline = time.time() + 20.0
+        ready_line = ""
+        assert process.stdout is not None
+        while time.time() < deadline:
+            line = process.stdout.readline()
+            if not line:
+                if process.poll() is not None:
+                    break
+                continue
+            ready_line = line.strip()
+            if ready_line.startswith(f"ready: uri=tcp://127.0.0.1:{port}"):
+                break
+
+        assert ready_line.startswith(f"ready: uri=tcp://127.0.0.1:{port}")
+
+        async def _fetch_info() -> Info:
+            async with AsyncClient.from_uri(f"tcp://127.0.0.1:{port}") as client:
+                await client.write_event(Describe().event())
+                event = await client.read_event()
+                assert event is not None
+                return Info.from_event(event)
+
+        info = asyncio.run(_fetch_info())
+        assert [model.name for model in info.wake[0].models] == ["ok_nabu"]
+    finally:
+        process.terminate()
+        try:
+            process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=10)

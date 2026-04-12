@@ -23,7 +23,7 @@ from scripts.validate_startup import validate_startup
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MANIFEST = REPO_ROOT / "models" / "manifest.yaml"
-DEFAULT_ADDON_CONFIG = REPO_ROOT / "addon" / "homewakeword-bcresnet" / "config.yaml"
+DEFAULT_ADDON_CONFIG = REPO_ROOT / "addon" / "homewakeword" / "config.yaml"
 DEFAULT_OUTPUT = REPO_ROOT / ".sisyphus" / "evidence" / "task-14-release.json"
 NO_HA_BUILDER_TOOL = "NO_HA_BUILDER_TOOL"
 
