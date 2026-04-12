@@ -7,7 +7,7 @@ from typing import Any
 
 import yaml
 
-from homewake.registry import ManifestValidationError, validate_release_manifest
+from homewake.registry import ManifestValidationError, load_registry
 
 
 class ReleaseValidationError(ValueError):
@@ -69,16 +69,47 @@ def _validate_addon_release_shape(addon_config_path: Path, *, backend: str) -> s
     return manifest_option
 
 
-def validate_release(manifest_path: Path, addon_config_path: Path) -> str:
-    inventory = validate_release_manifest(manifest_path)
+def validate_release_targets(
+    manifest_path: Path,
+    addon_config_path: Path,
+) -> tuple[list[dict[str, object]], str]:
+    registry = load_registry(manifest_path, require_artifact=True)
+    inventory = [
+        record.as_report_dict() for record in registry.inventory(verify_hash=True)
+    ]
     manifest_option = _validate_addon_release_shape(
         addon_config_path,
-        backend=inventory.backend,
+        backend=registry.default_model.backend,
     )
+    for record in inventory:
+        if record["provenance_status"] != "approved":
+            raise ManifestValidationError(
+                "release manifest requires provenance_status=approved; "
+                f"got {record['provenance_status']!r} for model '{record['model_id']}'"
+            )
+        if record["hash_verified"] is not True:
+            raise ManifestValidationError(
+                "release manifest hash verification failed for model "
+                f"'{record['model_id']}'"
+            )
+    return inventory, manifest_option
+
+
+def validate_release(manifest_path: Path, addon_config_path: Path) -> str:
+    inventory, manifest_option = validate_release_targets(
+        manifest_path,
+        addon_config_path,
+    )
+    if len(inventory) == 1:
+        record = inventory[0]
+        return (
+            "release validation passed: "
+            f"model={record['model_id']} wake_word={record['wake_word']} "
+            f"sha256={record['expected_sha256']} addon_manifest={manifest_option}"
+        )
     return (
         "release validation passed: "
-        f"model={inventory.model_id} wake_word={inventory.wake_word} "
-        f"sha256={inventory.expected_sha256} addon_manifest={manifest_option}"
+        f"models={len(inventory)} addon_manifest={manifest_option}"
     )
 
 
@@ -86,7 +117,12 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         print(validate_release(args.manifest, args.addon_config))
-    except (ManifestValidationError, ReleaseValidationError, OSError) as exc:
+    except (
+        ManifestValidationError,
+        ReleaseValidationError,
+        LookupError,
+        OSError,
+    ) as exc:
         print(str(exc), file=sys.stderr)
         return 1
     return 0

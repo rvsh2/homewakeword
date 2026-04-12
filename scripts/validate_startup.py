@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 
 from homewake.detector.bcresnet import BCResNetDetector, BCResNetRuntimeError
-from homewake.registry import ManifestValidationError, load_manifest
+from homewake.registry import ManifestValidationError, load_registry
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -15,7 +15,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def validate_startup(manifest_path: Path) -> str:
-    manifest = load_manifest(manifest_path, require_artifact=True)
+    manifest = load_registry(manifest_path, require_artifact=True).resolve("bcresnet")
     detector = BCResNetDetector(
         config=manifest.detector_config(),
         manifest=manifest,
@@ -34,7 +34,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         print(validate_startup(args.manifest))
-    except (ManifestValidationError, BCResNetRuntimeError, OSError) as exc:
+    except (ManifestValidationError, BCResNetRuntimeError, LookupError, OSError) as exc:
         print(str(exc), file=sys.stderr)
         return 1
     return 0
