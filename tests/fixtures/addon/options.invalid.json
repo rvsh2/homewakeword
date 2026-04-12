@@ -3,5 +3,9 @@
   "port": 70000,
   "detector_backend": "fake",
   "manifest": "",
+  "custom_models": "yes",
+  "custom_model_dir": "share/homewake/models",
+  "openwakeword_compat": "sometimes",
+  "openwakeword_model_dir": "share/openwakeword",
   "log_level": "verbose"
 }
