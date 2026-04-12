@@ -7,7 +7,8 @@ import json
 from pathlib import Path
 
 from homewake.audio import AudioChunk, floats_to_pcm16le
-from homewake.runtime import HomeWakeService
+from homewake.registry import ModelInventoryRecord
+from homewake.runtime import HomeWakeService, build_runtime_report
 
 
 @dataclass(frozen=True, slots=True)
@@ -17,9 +18,11 @@ class SelfTestResult:
     status: str
     health_status: str
     loaded_wake_words: tuple[str, ...]
+    loaded_models: tuple[ModelInventoryRecord, ...]
     detection_emitted: bool
     detection_wake_word: str | None
     service_uri: str
+    config: dict[str, object]
     startup_health: dict[str, object]
     shutdown_health: dict[str, object]
 
@@ -28,9 +31,11 @@ class SelfTestResult:
             "status": self.status,
             "health_status": self.health_status,
             "loaded_wake_words": list(self.loaded_wake_words),
+            "loaded_models": [model.as_report_dict() for model in self.loaded_models],
             "detection_emitted": self.detection_emitted,
             "detection_wake_word": self.detection_wake_word,
             "service_uri": self.service_uri,
+            "config": self.config,
             "startup_health": self.startup_health,
             "shutdown_health": self.shutdown_health,
         }
@@ -55,7 +60,7 @@ def run_self_test(
     detection_event = None
     server.start()
     try:
-        startup_health = server.health().as_dict()
+        startup_health = build_runtime_report(service)
         for _ in range(4):
             detection_event = server.handle_audio_chunk(_loud_chunk(service))
             if detection_event is not None:
@@ -63,18 +68,20 @@ def run_self_test(
     finally:
         server.stop()
 
-    shutdown_health = server.health().as_dict()
+    shutdown_health = build_runtime_report(service)
     result = SelfTestResult(
         status="ok" if detection_event is not None else "failed",
-        health_status="ok" if startup_health["overall"] == "ready" else "failed",
+        health_status=str(startup_health["overall"]),
         loaded_wake_words=tuple(
             wake_word.name for wake_word in server.describe().wake_words
         ),
+        loaded_models=service.inventory,
         detection_emitted=detection_event is not None,
         detection_wake_word=None
         if detection_event is None
         else detection_event.wake_word,
         service_uri=server.uri,
+        config=service.config_echo,
         startup_health=startup_health,
         shutdown_health=shutdown_health,
     )
