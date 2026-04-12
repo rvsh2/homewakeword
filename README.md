@@ -54,8 +54,10 @@ Optional compatibility path:
 
 Important:
 
-- a standalone `.tflite` file is **not enough**
-- the runtime expects a full bundle with model, manifest, and validation metadata
+- a full bundle is supported
+- a standalone `.tflite` file is also supported for openWakeWord-style import
+- when only a `.tflite` file is present, HomeWakeWord generates a sidecar manifest automatically
+- auto-generated imports are treated as auto-imported / unverifiable metadata sources
 
 ## Run locally
 
@@ -103,12 +105,39 @@ Start it with:
 docker compose up -d
 ```
 
+## Additional documentation
+
+- developer setup: [docs/development.md](docs/development.md)
+- release workflow: [docs/release.md](docs/release.md)
+
+Maintainer tooling includes:
+
+- `python -m scripts.generate_review`
+- `python -m scripts.commit_with_review`
+
 ## Technology
 
 - audio frontend: 16 kHz, mono, PCM16
 - detection model: **BC-ResNet**
+- optional VAD: **Silero VAD**
+- optional noise suppression: **SpeexDSP**
 - protocol layer: **Wyoming**
 - packaging: **Home Assistant add-on**
+
+## Optional VAD and noise suppression
+
+HomeWakeWord supports two optional audio-processing features inspired by openWakeWord:
+
+- **Silero VAD** for post-inference speech gating
+- **SpeexDSP noise suppression** before frontend processing
+
+Add-on options:
+
+- `vad_enabled`
+- `vad_threshold`
+- `enable_speex_noise_suppression`
+
+By default, both are disabled.
 
 ## Limitations
 
