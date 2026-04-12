@@ -1,4 +1,4 @@
-# HomeWakeWord BC-ResNet
+# HomeWakeWord
 
 HomeWakeWord is a **wake word detection** engine for **Home Assistant**, packaged as a **Home Assistant add-on** and exposed through **Wyoming**.
 
@@ -30,7 +30,7 @@ Currently available:
 ### Home Assistant add-on
 
 1. Add this repository as a custom add-on repository in Home Assistant.
-2. Install the **HomeWakeWord BC-ResNet** add-on.
+2. Install the **HomeWakeWord** add-on.
 3. Start the add-on.
 4. In Home Assistant, add the Wyoming integration and point it to the HomeWakeWord host and port.
 5. Select the wake word you want to use in your Assist voice pipeline.
@@ -54,7 +54,7 @@ The add-on will only load models that include a valid manifest and validation me
 
 ## How to use it with Home Assistant
 
-1. Build or install the `homewakeword-bcresnet` add-on.
+1. Build or install the `homewakeword` add-on.
 2. Start the add-on.
 3. In Home Assistant, add the Wyoming service that points to HomeWakeWord.
 4. Select the wake word in your voice pipeline.
@@ -73,7 +73,7 @@ After startup, the add-on exposes a Wyoming service that Home Assistant can use 
 ### Run in Home Assistant
 
 1. Add this repository as a custom add-on repository in Home Assistant.
-2. Install the `homewakeword-bcresnet` add-on.
+2. Install the `homewakeword` add-on.
 3. Start the add-on.
 4. Add the **Wyoming** integration in Home Assistant.
 5. Point Wyoming to the HomeWakeWord host and port `10700`.
@@ -102,8 +102,8 @@ python -m homewakeword.cli serve --self-test --report /tmp/self-test.json
 ### Run the add-on image locally
 
 ```bash
-docker build -f addon/homewakeword-bcresnet/Dockerfile -t local/homewakeword-bcresnet .
-docker run --rm local/homewakeword-bcresnet --self-test --report /tmp/self-test.json
+docker build -f addon/homewakeword-bcresnet/Dockerfile -t local/homewakeword .
+docker run --rm local/homewakeword --self-test --report /tmp/self-test.json
 ```
 
 ### Run with Docker Compose
@@ -113,8 +113,8 @@ Example `docker-compose.yml`:
 ```yaml
 services:
   homewakeword:
-    image: local/homewakeword-bcresnet
-    container_name: homewakeword-bcresnet
+    image: local/homewakeword
+    container_name: homewakeword
     ports:
       - "10700:10700"
     volumes:
