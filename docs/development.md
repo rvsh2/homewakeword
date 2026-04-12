@@ -31,7 +31,7 @@ python -m scripts.replay_stream --manifest models/manifest.yaml --wake-word okay
 Validate the packaged add-on config first:
 
 ```bash
-python -m scripts.validate_addon_config --config addon/homewakeword-bcresnet/config.yaml --options tests/fixtures/addon/options.valid.json
+python -m scripts.validate_addon_config --config addon/homewakeword/config.yaml --options tests/fixtures/addon/options.valid.json
 ```
 
 Then build and self-test the add-on image locally:
@@ -45,7 +45,7 @@ The repo can build the local Docker image, but the official Home Assistant add-o
 
 ## Artifact policy
 
-- Keep artifact metadata in `models/manifest.yaml` and add-on metadata in `addon/homewakeword-bcresnet/config.yaml`.
+- Keep artifact metadata in `models/manifest.yaml` and add-on metadata in `addon/homewakeword/config.yaml`.
 - Treat manifests, provenance, and OCI labels as the source of truth for what would ship.
 - Do not add HA-specific release secrets or credentials to docs, scripts, tests, or generated reports.
 - Local release automation must stay dry-run only unless a later task explicitly adds real publish steps.

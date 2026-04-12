@@ -10,7 +10,7 @@ services:
     volumes:
       - /opt/homewake/data:/data
       - /opt/homewake/share:/share
-    command: ["serve"]
+    command: ["serve", "--host", "0.0.0.0", "--port", "10700"]
 
 networks:
   bridge-network:
