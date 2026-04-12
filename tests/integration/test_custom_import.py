@@ -67,32 +67,46 @@ def test_runtime_imports_valid_custom_bundle_and_advertises_it(tmp_path: Path) -
     assert "hey_homewakeword_custom" in [
         wake_word.name for wake_word in service.server.describe().wake_words
     ]
-    assert any(record.wake_word == "hey_homewakeword_custom" for record in service.inventory)
+    assert any(
+        record.wake_word == "hey_homewakeword_custom" for record in service.inventory
+    )
     assert service.custom_imports.loaded_manifest_paths == (
         (bundle_dir / "manifest.yaml").resolve(),
     )
     assert service.custom_imports.rejected == ()
 
 
-def test_runtime_rejects_manifestless_tflite_imports(tmp_path: Path) -> None:
+def test_runtime_imports_standalone_tflite_with_auto_generated_manifest(
+    tmp_path: Path,
+) -> None:
     primary_dir = tmp_path / "primary"
     primary_dir.mkdir(parents=True, exist_ok=True)
-    (primary_dir / "bare_model.tflite").write_bytes(b"bare-custom-model")
+    standalone_model = primary_dir / "bare_model_v0.1.tflite"
+    standalone_model.write_bytes(b"bare-custom-model")
 
     service = _build_service(
         custom_models=True,
         custom_model_dir=primary_dir,
     )
 
-    assert "bare_model" not in service.registry.list_wake_words()
-    assert all(record.artifact_name != "bare_model.tflite" for record in service.inventory)
+    generated_manifest = primary_dir / "bare_model_v0.1.manifest.yaml"
+
+    assert generated_manifest.exists()
+    assert "bare_model" in service.registry.list_wake_words()
     assert any(
-        "sibling manifest.yaml" in message and "bare_model.tflite" in message
-        for message in service.custom_imports.rejected
+        record.artifact_name == "bare_model_v0.1.tflite" for record in service.inventory
     )
+    assert any(record.wake_word == "bare_model" for record in service.inventory)
+    assert (
+        generated_manifest.resolve() in service.custom_imports.generated_manifest_paths
+    )
+    assert generated_manifest.resolve() in service.custom_imports.loaded_manifest_paths
+    assert service.custom_imports.rejected == ()
 
 
-def test_openwakeword_compatibility_path_requires_explicit_opt_in(tmp_path: Path) -> None:
+def test_openwakeword_compatibility_path_requires_explicit_opt_in(
+    tmp_path: Path,
+) -> None:
     compat_root = tmp_path / "openwakeword"
     _ = _export_bundle(compat_root / "bundle")
 
