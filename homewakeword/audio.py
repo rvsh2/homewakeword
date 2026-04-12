@@ -9,7 +9,7 @@ import json
 import math
 from pathlib import Path
 import struct
-from typing import Iterable, Protocol
+from typing import Iterable, Protocol, cast
 import wave
 
 from homewakeword.config import AudioInputConfig, LogMelFrontendConfig
@@ -215,12 +215,11 @@ class SpeexNoiseSuppressor:
         )
         samples = struct.unpack("<" + "h" * chunk.frame_count, chunk.pcm)
         processed_frames: list[bytes] = []
+        noise_suppressor = cast(_NoiseSuppressorProtocol, self._noise_suppressor)
         for start in range(0, len(samples), self.frame_size):
             frame = samples[start : start + self.frame_size]
             processed_frames.append(
-                self._noise_suppressor.process(
-                    struct.pack("<" + "h" * len(frame), *frame)
-                )
+                noise_suppressor.process(struct.pack("<" + "h" * len(frame), *frame))
             )
         return AudioChunk(
             pcm=b"".join(processed_frames),
