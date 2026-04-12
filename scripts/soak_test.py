@@ -315,7 +315,7 @@ def _run_addon_restart_check(attempts: int) -> dict[str, object]:
             "detail": f"expected add-on Dockerfile is missing: {dockerfile}",
             "attempts": [],
         }
-    image = "local/homewakeword-bcresnet:soak"
+    image = "local/homewakeword:soak"
     build_result = _run_command(
         [docker_bin, "build", "-f", str(dockerfile), "-t", image, "."],
         timeout_seconds=900,

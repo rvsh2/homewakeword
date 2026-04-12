@@ -49,8 +49,8 @@ def test_smoke_report_emits_explicit_subsystem_results() -> None:
 
     report = ha_smoke(
         DEFAULT_HARNESS,
-        addon_slug="homewakeword-bcresnet",
-        addon_image="local/homewakeword-bcresnet",
+        addon_slug="homewakeword",
+        addon_image="local/homewakeword",
         wyoming_port=10400,
         report_path=report_path,
     )
@@ -91,15 +91,11 @@ def test_smoke_report_emits_explicit_subsystem_results() -> None:
 def test_prepare_supervisor_share_creates_nested_share_tree() -> None:
     with TemporaryDirectory() as tmpdir:
         share_root = Path(tmpdir) / "share-root"
-        _prepare_supervisor_share(
-            share_root, addon_install_slug="local_homewakeword-bcresnet"
-        )
+        _prepare_supervisor_share(share_root, addon_install_slug="local_homewakeword")
 
         assert (share_root / "share").is_dir()
-        assert (share_root / "addons" / "data" / "local_homewakeword-bcresnet").is_dir()
-        assert (
-            share_root / "cid_files" / "addon_local_homewakeword-bcresnet.cid"
-        ).is_file()
+        assert (share_root / "addons" / "data" / "local_homewakeword").is_dir()
+        assert (share_root / "cid_files" / "addon_local_homewakeword.cid").is_file()
 
 
 def test_missing_artifact_is_classified_as_artifact_loading() -> None:
