@@ -8,6 +8,9 @@ version = "0.0.0"
 description = "HomeWake BC-ResNet Home Assistant add-on skeleton"
 readme = "README.md"
 requires-python = ">=3.11"
+dependencies = [
+  "PyYAML>=6",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
