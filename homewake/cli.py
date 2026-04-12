@@ -6,7 +6,10 @@ import argparse
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+import signal
 import sys
+import threading
+import time
 from typing import cast
 
 from homewake.config import DetectorConfig, HomeWakeConfig, WyomingServerConfig
@@ -91,6 +94,23 @@ def _build_config(args: ServeArgs) -> HomeWakeConfig:
     )
 
 
+def _install_signal_handlers(stop_event: threading.Event) -> None:
+    def _handle_signal(signum: int, frame: object | None) -> None:
+        del signum, frame
+        stop_event.set()
+
+    for signum in (signal.SIGINT, signal.SIGTERM):
+        signal.signal(signum, _handle_signal)
+
+
+def _serve_forever(stop_event: threading.Event | None = None) -> None:
+    local_stop_event = threading.Event() if stop_event is None else stop_event
+    if stop_event is None:
+        _install_signal_handlers(local_stop_event)
+    while not local_stop_event.wait(timeout=1.0):
+        time.sleep(0)
+
+
 def _serve(args: argparse.Namespace) -> int:
     try:
         serve_args = _parse_serve_args(args)
@@ -109,6 +129,7 @@ def _serve(args: argparse.Namespace) -> int:
             print(
                 f"ready: uri={description.uri} wake_words={','.join(wake_word.name for wake_word in description.wake_words)}"
             )
+            _serve_forever()
         finally:
             server.stop()
     except (
