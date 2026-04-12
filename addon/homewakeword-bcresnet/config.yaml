@@ -1,6 +1,6 @@
-name: HomeWakeWord BC-ResNet
+name: HomeWakeWord
 version: "0.0.0"
-slug: homewakeword-bcresnet
+slug: homewakeword
 description: Wyoming-facing BC-ResNet wake word runtime for Home Assistant
 arch:
   - amd64
@@ -10,7 +10,7 @@ arch:
 startup: services
 boot: auto
 init: false
-image: ghcr.io/homewakeword/{arch}-addon-homewakeword-bcresnet
+image: ghcr.io/homewakeword/{arch}-addon-homewakeword
 ports:
   10700/tcp: 10700
 ports_description:
