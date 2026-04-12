@@ -6,7 +6,7 @@ BC-ResNet implementation details so protocol code stays swappable.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Self
 
@@ -14,7 +14,8 @@ from homewake.audio import AudioChunk
 from homewake.config import HomeWakeConfig, WyomingServerConfig
 from homewake.detector.base import WakeWordDetector
 from homewake.events import DetectionEvent, DetectionEventType
-from homewake.health import ComponentHealth, HealthStatus, RuntimeHealth
+from homewake.health import RuntimeHealth, build_runtime_health
+from homewake.registry import ModelInventoryRecord
 
 
 @dataclass(slots=True)
@@ -42,17 +43,6 @@ class WyomingRuntime:
             detector_backend=self.detector.backend_name,
             occurred_at=datetime.now(tz=timezone.utc),
             decision=decision,
-        )
-
-    def health(self) -> RuntimeHealth:
-        """Expose protocol and detector health without reaching into internals."""
-
-        return RuntimeHealth(
-            overall=HealthStatus.READY,
-            components=(
-                ComponentHealth(name="server", status=HealthStatus.READY),
-                ComponentHealth(name="detector", status=HealthStatus.READY),
-            ),
         )
 
 
@@ -102,16 +92,25 @@ class WyomingServer:
     config: WyomingServerConfig
     runtime: WyomingRuntime
     loaded_wake_words: tuple[str, ...] = ()
+    inventory: tuple[ModelInventoryRecord, ...] = ()
+    config_echo: dict[str, object] = field(default_factory=dict)
     _running: bool = False
 
     @classmethod
     def from_runtime(
-        cls, runtime: WyomingRuntime, *, loaded_wake_words: tuple[str, ...] = ()
+        cls,
+        runtime: WyomingRuntime,
+        *,
+        loaded_wake_words: tuple[str, ...] = (),
+        inventory: tuple[ModelInventoryRecord, ...] = (),
+        config_echo: dict[str, object] | None = None,
     ) -> Self:
         return cls(
             config=runtime.config.server,
             runtime=runtime,
             loaded_wake_words=loaded_wake_words,
+            inventory=inventory,
+            config_echo={} if config_echo is None else config_echo,
         )
 
     @property
@@ -152,23 +151,9 @@ class WyomingServer:
         )
 
     def health(self) -> RuntimeHealth:
-        if self._running and self.loaded_wake_words:
-            server_status = HealthStatus.READY
-            detector_status = HealthStatus.READY
-            overall = HealthStatus.READY
-        elif self.loaded_wake_words:
-            server_status = HealthStatus.DEGRADED
-            detector_status = HealthStatus.DEGRADED
-            overall = HealthStatus.DEGRADED
-        else:
-            server_status = HealthStatus.FAILED
-            detector_status = HealthStatus.FAILED
-            overall = HealthStatus.FAILED
-
-        return RuntimeHealth(
-            overall=overall,
-            components=(
-                ComponentHealth(name="server", status=server_status),
-                ComponentHealth(name="detector", status=detector_status),
-            ),
+        return build_runtime_health(
+            running=self._running,
+            loaded_wake_words=self.loaded_wake_words,
+            inventory=self.inventory,
+            config=self.config_echo,
         )

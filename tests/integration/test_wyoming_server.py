@@ -85,12 +85,14 @@ def test_self_test_cli_writes_health_and_wake_word_report(tmp_path: Path) -> Non
     payload = cast(
         dict[str, object], json.loads(report_path.read_text(encoding="utf-8"))
     )
+    loaded_models = cast(list[dict[str, object]], payload["loaded_models"])
     startup_health = cast(dict[str, object], payload["startup_health"])
     shutdown_health = cast(dict[str, object], payload["shutdown_health"])
     assert exit_code == 0
     assert payload["status"] == "ok"
-    assert payload["health_status"] == "ok"
+    assert payload["health_status"] == "ready"
     assert payload["loaded_wake_words"] == ["ok_nabu"]
+    assert loaded_models[0]["provenance_status"] == "approved"
     assert payload["detection_emitted"] is True
     assert startup_health["overall"] == "ready"
     assert shutdown_health["overall"] == "degraded"
