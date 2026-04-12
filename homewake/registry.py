@@ -101,6 +101,20 @@ class ModelInventoryRecord:
         )
 
     @property
+    def runtime_approved(self) -> bool:
+        if self.mode != "detector":
+            return True
+        return (
+            self.provenance_status
+            in (
+                ProvenanceStatus.APPROVED.value,
+                ProvenanceStatus.UNVERIFIABLE.value,
+            )
+            and self.expected_sha256 is not None
+            and self.hash_verified is True
+        )
+
+    @property
     def evaluation_validated(self) -> bool:
         return self.evaluation_status in (None, EvaluationStatus.VALIDATED.value)
 
@@ -108,7 +122,7 @@ class ModelInventoryRecord:
     def advertised(self) -> bool:
         if self.mode != "detector":
             return True
-        return self.release_approved and self.evaluation_validated
+        return self.runtime_approved and self.evaluation_validated
 
     def as_public_dict(self) -> dict[str, object]:
         payload: dict[str, object] = {
@@ -122,6 +136,7 @@ class ModelInventoryRecord:
             "provenance_status": self.provenance_status,
             "evaluation_status": self.evaluation_status,
             "hash_verified": self.hash_verified,
+            "runtime_approved": self.runtime_approved,
             "advertised": self.advertised,
         }
         if self.artifact_name is not None:
@@ -640,4 +655,31 @@ def load_registry(path: Path, *, require_artifact: bool = True) -> ModelRegistry
             return ModelRegistry(default_model=manifest, models=manifests)
     raise ManifestValidationError(
         f"default_model '{default_selector}' did not match any model_id or wake_word"
+    )
+
+
+def merge_registries(
+    base_registry: ModelRegistry,
+    imported_manifests: tuple[ModelManifest, ...],
+) -> ModelRegistry:
+    """Merge validated imported manifests into a base registry."""
+
+    seen_model_ids = {manifest.model_id for manifest in base_registry.models}
+    seen_wake_words = {manifest.wake_word for manifest in base_registry.models}
+    merged_models = list(base_registry.models)
+    for manifest in imported_manifests:
+        if manifest.model_id in seen_model_ids:
+            raise ManifestValidationError(
+                f"duplicate model_id '{manifest.model_id}' while merging imported registry"
+            )
+        if manifest.wake_word in seen_wake_words:
+            raise ManifestValidationError(
+                f"duplicate wake_word '{manifest.wake_word}' while merging imported registry"
+            )
+        seen_model_ids.add(manifest.model_id)
+        seen_wake_words.add(manifest.wake_word)
+        merged_models.append(manifest)
+    return ModelRegistry(
+        default_model=base_registry.default_model,
+        models=tuple(merged_models),
     )

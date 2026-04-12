@@ -61,7 +61,7 @@ class LogMelFrontendConfig:
 class DetectorConfig:
     """Detector backend selection and thresholding."""
 
-    backend: str = 'bcresnet'
+    backend: str = "bcresnet"
     threshold: float = 0.5
     manifest_path: Path | None = None
     cooldown: CooldownConfig = field(default_factory=CooldownConfig)
@@ -70,10 +70,20 @@ class DetectorConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class CustomModelImportConfig:
+    """Filesystem import settings for validated custom model bundles."""
+
+    enabled: bool = False
+    directory: Path = Path("/share/homewake/models")
+    openwakeword_compat_enabled: bool = False
+    openwakeword_directory: Path = Path("/share/openwakeword")
+
+
+@dataclass(frozen=True, slots=True)
 class WyomingServerConfig:
     """Protocol-facing network settings."""
 
-    host: str = '127.0.0.1'
+    host: str = "127.0.0.1"
     port: int = 10_700
 
 
@@ -83,4 +93,5 @@ class HomeWakeConfig:
 
     audio: AudioInputConfig = field(default_factory=AudioInputConfig)
     detector: DetectorConfig = field(default_factory=DetectorConfig)
+    custom_models: CustomModelImportConfig = field(default_factory=CustomModelImportConfig)
     server: WyomingServerConfig = field(default_factory=WyomingServerConfig)
