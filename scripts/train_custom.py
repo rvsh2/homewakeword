@@ -6,8 +6,8 @@ import json
 from pathlib import Path
 import sys
 
-from homewake.registry import ManifestValidationError, load_manifest
-from homewake.training import (
+from homewakeword.registry import ManifestValidationError, load_manifest
+from homewakeword.training import (
     TrainingValidationError,
     build_runtime_manifest,
     evaluate_holdouts,

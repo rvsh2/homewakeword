@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from homewake.registry import (
+from homewakeword.registry import (
     ManifestValidationError,
     ModelRegistry,
     ProvenanceStatus,

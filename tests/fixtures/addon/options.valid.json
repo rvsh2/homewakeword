@@ -4,7 +4,7 @@
   "detector_backend": "bcresnet",
   "manifest": "/app/models/manifest.yaml",
   "custom_models": true,
-  "custom_model_dir": "/share/homewake/models",
+  "custom_model_dir": "/share/homewakeword/models",
   "openwakeword_compat": false,
   "openwakeword_model_dir": "/share/openwakeword",
   "log_level": "info"

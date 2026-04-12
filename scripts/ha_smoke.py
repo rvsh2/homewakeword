@@ -16,23 +16,23 @@ from typing import Any, TypedDict, cast
 
 import yaml
 
-from homewake.config import (
+from homewakeword.config import (
     CustomModelImportConfig,
     DetectorConfig,
-    HomeWakeConfig,
+    HomeWakeWordConfig,
     WyomingServerConfig,
 )
-from homewake.detector.bcresnet import BCResNetRuntimeError
-from homewake.registry import ManifestValidationError, load_registry
-from homewake.runtime import build_service
-from homewake.selftest import run_self_test
+from homewakeword.detector.bcresnet import BCResNetRuntimeError
+from homewakeword.registry import ManifestValidationError, load_registry
+from homewakeword.runtime import build_service
+from homewakeword.selftest import run_self_test
 from scripts.replay_stream import main as replay_stream_main
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MANIFEST = REPO_ROOT / "models" / "manifest.yaml"
-DEFAULT_ADDON_DOCKERFILE = REPO_ROOT / "addon" / "homewake-bcresnet" / "Dockerfile"
-DEFAULT_ADDON_SOURCE = REPO_ROOT / "addon" / "homewake-bcresnet"
+DEFAULT_ADDON_DOCKERFILE = REPO_ROOT / "addon" / "homewakeword-bcresnet" / "Dockerfile"
+DEFAULT_ADDON_SOURCE = REPO_ROOT / "addon" / "homewakeword-bcresnet"
 DEFAULT_HARNESS = (
     REPO_ROOT / "tests" / "harness" / "ha-supervised" / "docker-compose.yml"
 )
@@ -326,7 +326,7 @@ def _run_wyoming_self_test(
     wyoming_port: int,
 ) -> dict[str, Any]:
     service = build_service(
-        HomeWakeConfig(
+        HomeWakeWordConfig(
             detector=DetectorConfig(manifest_path=manifest_path),
             custom_models=CustomModelImportConfig(enabled=False),
             server=WyomingServerConfig(host="127.0.0.1", port=wyoming_port),
@@ -343,7 +343,7 @@ def _build_addon_options(port: int) -> dict[str, object]:
         "detector_backend": "bcresnet",
         "manifest": "/app/models/manifest.yaml",
         "custom_models": False,
-        "custom_model_dir": "/share/homewake/models",
+        "custom_model_dir": "/share/homewakeword/models",
         "openwakeword_compat": False,
         "openwakeword_model_dir": "/share/openwakeword",
         "log_level": "info",

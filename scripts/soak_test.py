@@ -12,16 +12,16 @@ from typing import Any, Mapping, TypedDict
 
 import yaml
 
-from homewake.audio import iter_wave_chunks
-from homewake.config import (
+from homewakeword.audio import iter_wave_chunks
+from homewakeword.config import (
     CustomModelImportConfig,
     DetectorConfig,
-    HomeWakeConfig,
+    HomeWakeWordConfig,
     WyomingServerConfig,
 )
-from homewake.detector.bcresnet import BCResNetRuntimeError
-from homewake.registry import ManifestValidationError
-from homewake.runtime import (
+from homewakeword.detector.bcresnet import BCResNetRuntimeError
+from homewakeword.registry import ManifestValidationError
+from homewakeword.runtime import (
     build_service,
     build_runtime_report,
     build_startup_failure_report,
@@ -136,8 +136,8 @@ def _materialize_manifest(source_manifest: Path, target_manifest: Path) -> None:
     )
 
 
-def _build_config(manifest_path: Path, *, port: int = 10400) -> HomeWakeConfig:
-    return HomeWakeConfig(
+def _build_config(manifest_path: Path, *, port: int = 10400) -> HomeWakeWordConfig:
+    return HomeWakeWordConfig(
         detector=DetectorConfig(manifest_path=manifest_path),
         custom_models=CustomModelImportConfig(enabled=False),
         server=WyomingServerConfig(host="127.0.0.1", port=port),
@@ -307,7 +307,7 @@ def _run_addon_restart_check(attempts: int) -> dict[str, object]:
             "detail": "docker is not available in this workspace; add-on restart check was not executed.",
             "attempts": [],
         }
-    dockerfile = REPO_ROOT / "addon" / "homewake-bcresnet" / "Dockerfile"
+    dockerfile = REPO_ROOT / "addon" / "homewakeword-bcresnet" / "Dockerfile"
     if not dockerfile.exists():
         return {
             "status": "blocked",
@@ -315,7 +315,7 @@ def _run_addon_restart_check(attempts: int) -> dict[str, object]:
             "detail": f"expected add-on Dockerfile is missing: {dockerfile}",
             "attempts": [],
         }
-    image = "local/homewake-bcresnet:soak"
+    image = "local/homewakeword-bcresnet:soak"
     build_result = _run_command(
         [docker_bin, "build", "-f", str(dockerfile), "-t", image, "."],
         timeout_seconds=900,

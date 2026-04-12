@@ -4,13 +4,13 @@ from pathlib import Path
 
 import pytest
 
-from homewake.registry import ManifestValidationError, validate_release_manifest
+from homewakeword.registry import ManifestValidationError, validate_release_manifest
 from scripts.validate_release import main, validate_release
 
 
 FIXTURE_ROOT = Path(__file__).resolve().parents[1] / "fixtures" / "manifests"
 ADDON_CONFIG = (
-    Path(__file__).resolve().parents[2] / "addon" / "homewake-bcresnet" / "config.yaml"
+    Path(__file__).resolve().parents[2] / "addon" / "homewakeword-bcresnet" / "config.yaml"
 )
 
 

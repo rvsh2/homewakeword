@@ -1,4 +1,4 @@
-name: homewake-ha-supervised
+name: homewakeword-ha-supervised
 
 services:
   ha_supervisor:
@@ -7,11 +7,11 @@ services:
     restart: "no"
     environment:
       SUPERVISOR_MACHINE: generic-x86-64
-      SUPERVISOR_SHARE: /opt/homewake/.sisyphus/ha-supervised/share
-      SUPERVISOR_NAME: homewake-smoke
+      SUPERVISOR_SHARE: /opt/homewakeword/.sisyphus/ha-supervised/share
+      SUPERVISOR_NAME: homewakeword-smoke
     volumes:
       - ha_data:/data
-      - /opt/homewake/.sisyphus/ha-supervised/share:/opt/homewake/.sisyphus/ha-supervised/share
+      - /opt/homewakeword/.sisyphus/ha-supervised/share:/opt/homewakeword/.sisyphus/ha-supervised/share
       - /etc/machine-id:/etc/machine-id:ro
       - /run/dbus:/run/dbus:ro
       - /var/run/docker.sock:/var/run/docker.sock

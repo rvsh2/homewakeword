@@ -6,7 +6,7 @@ from scripts.validate_addon_config import main, validate_addon_config
 
 
 FIXTURE_ROOT = Path(__file__).resolve().parents[1] / 'fixtures' / 'addon'
-CONFIG_PATH = Path(__file__).resolve().parents[2] / 'addon' / 'homewake-bcresnet' / 'config.yaml'
+CONFIG_PATH = Path(__file__).resolve().parents[2] / 'addon' / 'homewakeword-bcresnet' / 'config.yaml'
 
 
 def test_validate_addon_config_accepts_valid_options() -> None:

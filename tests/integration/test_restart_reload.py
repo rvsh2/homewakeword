@@ -6,11 +6,11 @@ from typing import cast
 
 import yaml
 
-from homewake.audio import iter_wave_chunks
-from homewake.config import DetectorConfig, HomeWakeConfig, WyomingServerConfig
-from homewake.detector.bcresnet import BCResNetRuntimeError
-from homewake.registry import ManifestValidationError
-from homewake.runtime import (
+from homewakeword.audio import iter_wave_chunks
+from homewakeword.config import DetectorConfig, HomeWakeWordConfig, WyomingServerConfig
+from homewakeword.detector.bcresnet import BCResNetRuntimeError
+from homewakeword.registry import ManifestValidationError
+from homewakeword.runtime import (
     build_service,
     build_runtime_report,
     build_startup_failure_report,
@@ -25,8 +25,8 @@ VALID_SWAP_MANIFEST = MANIFEST_ROOT / "restart_swap_hey_jarvis.yaml"
 INVALID_SWAP_MANIFEST = MANIFEST_ROOT / "restart_swap_invalid_missing_artifact.yaml"
 
 
-def _build_config(manifest_path: Path, *, port: int = 10400) -> HomeWakeConfig:
-    return HomeWakeConfig(
+def _build_config(manifest_path: Path, *, port: int = 10400) -> HomeWakeWordConfig:
+    return HomeWakeWordConfig(
         detector=DetectorConfig(manifest_path=manifest_path),
         server=WyomingServerConfig(host="127.0.0.1", port=port),
     )

@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "homewake-bcresnet"
+name = "homewakeword-bcresnet"
 version = "0.0.0"
-description = "HomeWake BC-ResNet Home Assistant add-on skeleton"
+description = "HomeWakeWord BC-ResNet Home Assistant add-on skeleton"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["homewake"]
+packages = ["homewakeword"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

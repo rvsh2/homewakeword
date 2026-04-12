@@ -4,7 +4,7 @@
   "detector_backend": "fake",
   "manifest": "",
   "custom_models": "yes",
-  "custom_model_dir": "share/homewake/models",
+  "custom_model_dir": "share/homewakeword/models",
   "openwakeword_compat": "sometimes",
   "openwakeword_model_dir": "share/openwakeword",
   "log_level": "verbose"

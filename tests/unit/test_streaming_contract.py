@@ -3,9 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 import math
 
-from homewake.audio import AudioChunk, floats_to_pcm16le, iter_wave_chunks
-from homewake.config import AudioInputConfig, DetectorConfig
-from homewake.detector.bcresnet import BCResNetStreamingFrontend
+from homewakeword.audio import AudioChunk, floats_to_pcm16le, iter_wave_chunks
+from homewakeword.config import AudioInputConfig, DetectorConfig
+from homewakeword.detector.bcresnet import BCResNetStreamingFrontend
 
 
 FIXTURE_ROOT = Path(__file__).resolve().parents[1] / 'fixtures' / 'stream'

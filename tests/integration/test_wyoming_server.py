@@ -4,10 +4,10 @@ import json
 from pathlib import Path
 from typing import cast
 
-from homewake.audio import iter_wave_chunks
-from homewake.cli import main
-from homewake.config import DetectorConfig, HomeWakeConfig, WyomingServerConfig
-from homewake.runtime import HomeWakeService, build_service
+from homewakeword.audio import iter_wave_chunks
+from homewakeword.cli import main
+from homewakeword.config import DetectorConfig, HomeWakeWordConfig, WyomingServerConfig
+from homewakeword.runtime import HomeWakeWordService, build_service
 
 
 FIXTURE_ROOT = Path(__file__).resolve().parents[1] / "fixtures"
@@ -15,9 +15,9 @@ MANIFEST_PATH = FIXTURE_ROOT / "manifests" / "ok_nabu_detector.yaml"
 POSITIVE_WAV = FIXTURE_ROOT / "stream" / "ok_nabu_positive.wav"
 
 
-def _build_fixture_service() -> HomeWakeService:
+def _build_fixture_service() -> HomeWakeWordService:
     return build_service(
-        HomeWakeConfig(
+        HomeWakeWordConfig(
             detector=DetectorConfig(manifest_path=MANIFEST_PATH),
             server=WyomingServerConfig(host="127.0.0.1", port=10400),
         )

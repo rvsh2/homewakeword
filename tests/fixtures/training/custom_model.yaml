@@ -1,5 +1,5 @@
-model_id: custom_fixture_homewake
-wake_word: hey_homewake_custom
+model_id: custom_fixture_homewakeword
+wake_word: hey_homewakeword_custom
 version: 0.1.0
 threshold: 0.55
 dataset:
@@ -9,12 +9,12 @@ dataset:
   holdout_positive: ../stream/alexa_positive.wav
   holdout_negative: ../stream/no_wake_negative.wav
 provenance:
-  source: custom://tests/custom_fixture_homewake
-  training_recipe: homewake-custom-pipeline
+  source: custom://tests/custom_fixture_homewakeword
+  training_recipe: homewakeword-custom-pipeline
   training_recipe_version: 0.1.0
   license: CC-BY-4.0
 export:
-  artifact_name: custom_fixture_homewake.tflite
+  artifact_name: custom_fixture_homewakeword.tflite
 audio:
   sample_rate_hz: 16000
   sample_width_bytes: 2

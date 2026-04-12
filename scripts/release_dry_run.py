@@ -8,22 +8,22 @@ from typing import Any
 
 import yaml
 
-from homewake.config import (
+from homewakeword.config import (
     CustomModelImportConfig,
     DetectorConfig,
-    HomeWakeConfig,
+    HomeWakeWordConfig,
     WyomingServerConfig,
 )
-from homewake.runtime import build_service
-from homewake.selftest import run_self_test
-from homewake.registry import load_registry
+from homewakeword.runtime import build_service
+from homewakeword.selftest import run_self_test
+from homewakeword.registry import load_registry
 from scripts.validate_release import validate_release, validate_release_targets
 from scripts.validate_startup import validate_startup
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MANIFEST = REPO_ROOT / "models" / "manifest.yaml"
-DEFAULT_ADDON_CONFIG = REPO_ROOT / "addon" / "homewake-bcresnet" / "config.yaml"
+DEFAULT_ADDON_CONFIG = REPO_ROOT / "addon" / "homewakeword-bcresnet" / "config.yaml"
 DEFAULT_OUTPUT = REPO_ROOT / ".sisyphus" / "evidence" / "task-14-release.json"
 NO_HA_BUILDER_TOOL = "NO_HA_BUILDER_TOOL"
 
@@ -33,7 +33,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--addon-config", type=Path, default=DEFAULT_ADDON_CONFIG)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--image-tag", default="local/homewake-bcresnet")
+    parser.add_argument("--image-tag", default="local/homewakeword-bcresnet")
     return parser
 
 
@@ -60,7 +60,7 @@ def release_dry_run(
     registry = load_registry(manifest_path, require_artifact=True)
     addon_config = _load_addon_config(addon_config_path)
     service = build_service(
-        HomeWakeConfig(
+        HomeWakeWordConfig(
             detector=DetectorConfig(manifest_path=manifest_path),
             custom_models=CustomModelImportConfig(enabled=False),
             server=WyomingServerConfig(host="127.0.0.1", port=10400),

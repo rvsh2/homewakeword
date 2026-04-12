@@ -8,16 +8,16 @@ from pathlib import Path
 import sys
 from typing import Literal, TypedDict, cast
 
-from homewake.audio import AudioFormatError, iter_wave_chunks
-from homewake.config import HomeWakeConfig
-from homewake.detector.bcresnet import (
+from homewakeword.audio import AudioFormatError, iter_wave_chunks
+from homewakeword.config import HomeWakeWordConfig
+from homewakeword.detector.bcresnet import (
     BCResNetDetector,
     BCResNetRuntimeError,
     BCResNetStreamingFrontend,
 )
-from homewake.events import DetectionEventType
-from homewake.registry import ManifestValidationError, ModelManifest, load_registry
-from homewake.server.wyoming import WyomingRuntime
+from homewakeword.events import DetectionEventType
+from homewakeword.registry import ManifestValidationError, ModelManifest, load_registry
+from homewakeword.server.wyoming import WyomingRuntime
 
 
 @dataclass(frozen=True, slots=True)
@@ -162,7 +162,7 @@ def _detector_payload(
         audio_config=manifest.audio,
     )
     runtime = WyomingRuntime(
-        config=HomeWakeConfig(audio=manifest.audio, detector=manifest.detector_config()),
+        config=HomeWakeWordConfig(audio=manifest.audio, detector=manifest.detector_config()),
         detector=detector,
     )
     try:

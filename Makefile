@@ -4,23 +4,23 @@ verify:
 	python -m pytest -q
 	$(MAKE) verify-task12
 	python -m scripts.validate_repo
-	python -m scripts.validate_addon_config --config addon/homewake-bcresnet/config.yaml --options tests/fixtures/addon/options.valid.json
+	python -m scripts.validate_addon_config --config addon/homewakeword-bcresnet/config.yaml --options tests/fixtures/addon/options.valid.json
 	$(MAKE) verify-task14
 
 test:
 	python -m pytest -q
 
 verify-addon:
-	python -m scripts.validate_addon_config --config addon/homewake-bcresnet/config.yaml --options tests/fixtures/addon/options.valid.json
+	python -m scripts.validate_addon_config --config addon/homewakeword-bcresnet/config.yaml --options tests/fixtures/addon/options.valid.json
 
 addon-image:
-	docker build -f addon/homewake-bcresnet/Dockerfile -t local/homewake-bcresnet .
+	docker build -f addon/homewakeword-bcresnet/Dockerfile -t local/homewakeword-bcresnet .
 
 addon-self-test: addon-image
-	docker run --rm local/homewake-bcresnet --self-test --report /tmp/self-test.json
+	docker run --rm local/homewakeword-bcresnet --self-test --report /tmp/self-test.json
 
 addon-builder-test:
-	docker run --rm --privileged -v "/opt/homewake/addon/homewake-bcresnet:/data" -v /var/run/docker.sock:/var/run/docker.sock:ro ghcr.io/home-assistant/amd64-builder:latest --target /data --amd64 --test --image local/homewake-bcresnet-{arch} --docker-hub local
+	docker run --rm --privileged -v "/opt/homewake/addon/homewakeword-bcresnet:/data" -v /var/run/docker.sock:/var/run/docker.sock:ro ghcr.io/home-assistant/amd64-builder:latest --target /data --amd64 --test --image local/homewakeword-bcresnet-{arch} --docker-hub local
 
 verify-task12:
 	python -m pytest tests/integration/test_restart_reload.py -q
@@ -33,7 +33,7 @@ verify-task14:
 
 verify-e2e:
 	python -m pytest tests/e2e -q
-	python -m scripts.ha_smoke --harness tests/harness/ha-supervised/docker-compose.yml --addon-slug homewake-bcresnet --addon-image local/homewake-bcresnet --wyoming-port 10400 --report .sisyphus/evidence/ha-smoke.json
+	python -m scripts.ha_smoke --harness tests/harness/ha-supervised/docker-compose.yml --addon-slug homewakeword-bcresnet --addon-image local/homewakeword-bcresnet --wyoming-port 10400 --report .sisyphus/evidence/ha-smoke.json
 
 release-dry-run:
 	python -m scripts.release_dry_run

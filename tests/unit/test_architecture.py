@@ -4,19 +4,19 @@ import ast
 from pathlib import Path
 from typing import get_type_hints
 
-from homewake.audio import AudioChunk
-from homewake.config import HomeWakeConfig
-from homewake.detector.base import (
+from homewakeword.audio import AudioChunk
+from homewakeword.config import HomeWakeWordConfig
+from homewakeword.detector.base import (
     DetectionDecision,
     DetectorRuntimeState,
     WakeWordDetector,
 )
-from homewake.events import DetectionEventType
-from homewake.server.wyoming import WyomingRuntime, WyomingServer
+from homewakeword.events import DetectionEventType
+from homewakeword.server.wyoming import WyomingRuntime, WyomingServer
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-WYOMING_MODULE = PROJECT_ROOT / "homewake" / "server" / "wyoming.py"
+WYOMING_MODULE = PROJECT_ROOT / "homewakeword" / "server" / "wyoming.py"
 
 
 class FakeDetector:
@@ -39,7 +39,7 @@ class FakeDetector:
             detected=False,
             score=0.1,
             threshold=0.5,
-            label="hey_homewake",
+            label="hey_homewakeword",
             state=DetectorRuntimeState(
                 cooldown_remaining_seconds=0.0, refractory_remaining_seconds=0.0
             ),
@@ -60,9 +60,9 @@ def _imported_modules(path: Path) -> set[str]:
 def test_wyoming_server_imports_only_contract_layers() -> None:
     imports = _imported_modules(WYOMING_MODULE)
 
-    assert "homewake.detector.base" in imports
-    assert "homewake.events" in imports
-    assert "homewake.detector.bcresnet" not in imports
+    assert "homewakeword.detector.base" in imports
+    assert "homewakeword.events" in imports
+    assert "homewakeword.detector.bcresnet" not in imports
 
 
 def test_wyoming_runtime_is_typed_against_detector_protocol() -> None:
@@ -72,18 +72,18 @@ def test_wyoming_runtime_is_typed_against_detector_protocol() -> None:
 
 
 def test_wyoming_runtime_emits_structured_events() -> None:
-    runtime = WyomingRuntime(config=HomeWakeConfig(), detector=FakeDetector())
+    runtime = WyomingRuntime(config=HomeWakeWordConfig(), detector=FakeDetector())
     event = runtime.handle_audio_chunk(
         AudioChunk(pcm=b"\x00\x00" * 160, sample_rate_hz=16_000, sample_width_bytes=2)
     )
 
     assert event.type is DetectionEventType.SCORED
     assert event.detector_backend == "fake"
-    assert event.decision.label == "hey_homewake"
+    assert event.decision.label == "hey_homewakeword"
 
 
 def test_wyoming_server_uses_runtime_config_boundary() -> None:
-    runtime = WyomingRuntime(config=HomeWakeConfig(), detector=FakeDetector())
+    runtime = WyomingRuntime(config=HomeWakeWordConfig(), detector=FakeDetector())
     server = WyomingServer.from_runtime(runtime)
 
     assert server.config is runtime.config.server

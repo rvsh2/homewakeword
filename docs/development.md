@@ -31,7 +31,7 @@ python -m scripts.replay_stream --manifest models/manifest.yaml --wake-word okay
 Validate the packaged add-on config first:
 
 ```bash
-python -m scripts.validate_addon_config --config addon/homewake-bcresnet/config.yaml --options tests/fixtures/addon/options.valid.json
+python -m scripts.validate_addon_config --config addon/homewakeword-bcresnet/config.yaml --options tests/fixtures/addon/options.valid.json
 ```
 
 Then build and self-test the add-on image locally:
@@ -45,7 +45,7 @@ The repo can build the local Docker image, but the official Home Assistant add-o
 
 ## Artifact policy
 
-- Keep artifact metadata in `models/manifest.yaml` and add-on metadata in `addon/homewake-bcresnet/config.yaml`.
+- Keep artifact metadata in `models/manifest.yaml` and add-on metadata in `addon/homewakeword-bcresnet/config.yaml`.
 - Treat manifests, provenance, and OCI labels as the source of truth for what would ship.
 - Do not add HA-specific release secrets or credentials to docs, scripts, tests, or generated reports.
 - Local release automation must stay dry-run only unless a later task explicitly adds real publish steps.
@@ -55,12 +55,12 @@ The repo can build the local Docker image, but the official Home Assistant add-o
 Generate a repo-local custom bundle:
 
 ```bash
-python -m scripts.train_custom --config tests/fixtures/training/custom_model.yaml --output-dir /tmp/homewake-custom
+python -m scripts.train_custom --config tests/fixtures/training/custom_model.yaml --output-dir /tmp/homewakeword-custom
 ```
 
 Then import it through the existing runtime/add-on paths:
 
-- Primary import root: `/share/homewake/models`
+- Primary import root: `/share/homewakeword/models`
 - Optional compatibility root: `/share/openwakeword` when explicitly enabled
 
 Validated bundle manifests are required. Bare `.tflite` or `.onnx` files without manifest metadata are rejected.

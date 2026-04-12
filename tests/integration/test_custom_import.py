@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from homewake.config import (
+from homewakeword.config import (
     CustomModelImportConfig,
     DetectorConfig,
-    HomeWakeConfig,
+    HomeWakeWordConfig,
     WyomingServerConfig,
 )
-from homewake.runtime import build_service
+from homewakeword.runtime import build_service
 from scripts.train_custom import main as train_custom_main
 
 
@@ -25,7 +25,7 @@ def _build_service(
     openwakeword_model_dir: Path | None = None,
 ):
     return build_service(
-        HomeWakeConfig(
+        HomeWakeWordConfig(
             detector=DetectorConfig(manifest_path=REPO_PACK_MANIFEST),
             custom_models=CustomModelImportConfig(
                 enabled=custom_models,
@@ -63,11 +63,11 @@ def test_runtime_imports_valid_custom_bundle_and_advertises_it(tmp_path: Path) -
         custom_model_dir=tmp_path / "primary",
     )
 
-    assert "hey_homewake_custom" in service.registry.list_wake_words()
-    assert "hey_homewake_custom" in [
+    assert "hey_homewakeword_custom" in service.registry.list_wake_words()
+    assert "hey_homewakeword_custom" in [
         wake_word.name for wake_word in service.server.describe().wake_words
     ]
-    assert any(record.wake_word == "hey_homewake_custom" for record in service.inventory)
+    assert any(record.wake_word == "hey_homewakeword_custom" for record in service.inventory)
     assert service.custom_imports.loaded_manifest_paths == (
         (bundle_dir / "manifest.yaml").resolve(),
     )
@@ -102,7 +102,7 @@ def test_openwakeword_compatibility_path_requires_explicit_opt_in(tmp_path: Path
         openwakeword_compat=False,
         openwakeword_model_dir=compat_root,
     )
-    assert "hey_homewake_custom" not in without_compat.registry.list_wake_words()
+    assert "hey_homewakeword_custom" not in without_compat.registry.list_wake_words()
 
     with_compat = _build_service(
         custom_models=True,
@@ -110,4 +110,4 @@ def test_openwakeword_compatibility_path_requires_explicit_opt_in(tmp_path: Path
         openwakeword_compat=True,
         openwakeword_model_dir=compat_root,
     )
-    assert "hey_homewake_custom" in with_compat.registry.list_wake_words()
+    assert "hey_homewakeword_custom" in with_compat.registry.list_wake_words()

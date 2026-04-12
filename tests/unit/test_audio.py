@@ -6,7 +6,7 @@ import wave
 
 import pytest
 
-from homewake.audio import (
+from homewakeword.audio import (
     AudioChunk,
     AudioFormatError,
     RollingAudioWindow,
@@ -16,7 +16,7 @@ from homewake.audio import (
     pcm16le_to_floats,
     validate_audio_chunk,
 )
-from homewake.config import AudioInputConfig, LogMelFrontendConfig
+from homewakeword.config import AudioInputConfig, LogMelFrontendConfig
 
 
 FIXTURE_ROOT = Path(__file__).resolve().parents[1] / "fixtures" / "stream"

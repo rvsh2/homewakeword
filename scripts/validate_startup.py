@@ -4,8 +4,8 @@ import argparse
 from pathlib import Path
 import sys
 
-from homewake.detector.bcresnet import BCResNetDetector, BCResNetRuntimeError
-from homewake.registry import ManifestValidationError, load_registry
+from homewakeword.detector.bcresnet import BCResNetDetector, BCResNetRuntimeError
+from homewakeword.registry import ManifestValidationError, load_registry
 
 
 def build_parser() -> argparse.ArgumentParser:

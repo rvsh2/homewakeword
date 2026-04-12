@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-from homewake.registry import load_manifest
+from homewakeword.registry import load_manifest
 from scripts.train_custom import main
 
 
@@ -25,7 +25,7 @@ def test_custom_pipeline_exports_runtime_manifest_and_report(tmp_path: Path) -> 
     )
 
     assert exit_code == 0
-    assert (output_dir / "custom_fixture_homewake.tflite").exists()
+    assert (output_dir / "custom_fixture_homewakeword.tflite").exists()
     assert (output_dir / "manifest.yaml").exists()
     assert (output_dir / "manifest_snippet.yaml").exists()
     assert (output_dir / "training_report.json").exists()
@@ -33,10 +33,10 @@ def test_custom_pipeline_exports_runtime_manifest_and_report(tmp_path: Path) -> 
     assert (output_dir / "fixtures" / "no_wake_negative.wav").exists()
 
     manifest = load_manifest(output_dir / "manifest.yaml")
-    assert manifest.model_id == "custom_fixture_homewake"
-    assert manifest.wake_word == "hey_homewake_custom"
+    assert manifest.model_id == "custom_fixture_homewakeword"
+    assert manifest.wake_word == "hey_homewakeword_custom"
     assert (
-        manifest.model_path == (output_dir / "custom_fixture_homewake.tflite").resolve()
+        manifest.model_path == (output_dir / "custom_fixture_homewakeword.tflite").resolve()
     )
     assert manifest.provenance is not None
     assert manifest.provenance.provenance_status.value == "unverifiable"

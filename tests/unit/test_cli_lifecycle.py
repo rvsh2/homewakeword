@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import threading
 
-from homewake.cli import _serve_forever
+from homewakeword.cli import _serve_forever
 
 
 def test_serve_forever_returns_when_stop_event_is_set() -> None:

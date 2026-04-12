@@ -4,18 +4,18 @@ import json
 from pathlib import Path
 from typing import cast
 
-from homewake.config import DetectorConfig, HomeWakeConfig, WyomingServerConfig
-from homewake.runtime import HomeWakeService, build_service
-from homewake.selftest import run_self_test
+from homewakeword.config import DetectorConfig, HomeWakeWordConfig, WyomingServerConfig
+from homewakeword.runtime import HomeWakeWordService, build_service
+from homewakeword.selftest import run_self_test
 
 
 FIXTURE_ROOT = Path(__file__).resolve().parents[1] / "fixtures"
 MANIFEST_PATH = FIXTURE_ROOT / "manifests" / "ok_nabu_detector.yaml"
 
 
-def _build_fixture_service() -> HomeWakeService:
+def _build_fixture_service() -> HomeWakeWordService:
     return build_service(
-        HomeWakeConfig(
+        HomeWakeWordConfig(
             detector=DetectorConfig(manifest_path=MANIFEST_PATH),
             server=WyomingServerConfig(host="127.0.0.1", port=10400),
         )

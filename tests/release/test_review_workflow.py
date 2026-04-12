@@ -23,7 +23,7 @@ def test_generate_review_writes_required_review_artifact(tmp_path: Path) -> None
 
     content = output_path.read_text(encoding="utf-8")
     assert "review artifact generated" in message
-    assert "<!-- homewake-review-artifact -->" in content
+    assert "<!-- homewakeword-review-artifact -->" in content
     assert "<!-- task: 14 -->" in content
     assert (
         "Finalize developer docs, release workflow, and commit discipline automation"

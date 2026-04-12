@@ -4,8 +4,8 @@ import json
 from pathlib import Path
 from typing import cast
 
-from homewake.config import DetectorConfig, HomeWakeConfig, WyomingServerConfig
-from homewake.runtime import build_service
+from homewakeword.config import DetectorConfig, HomeWakeWordConfig, WyomingServerConfig
+from homewakeword.runtime import build_service
 from scripts.replay_stream import DetectorReplayPayload, main
 
 
@@ -24,7 +24,7 @@ EXPECTED_V1_WAKE_WORDS = (
 
 def _build_service(manifest_path: Path):
     return build_service(
-        HomeWakeConfig(
+        HomeWakeWordConfig(
             detector=DetectorConfig(manifest_path=manifest_path),
             server=WyomingServerConfig(host='127.0.0.1', port=10400),
         )

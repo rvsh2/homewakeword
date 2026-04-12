@@ -14,7 +14,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 PLAN_PATH = REPO_ROOT / ".sisyphus" / "plans" / "implementation-plan.md"
 EVIDENCE_ROOT = REPO_ROOT / ".sisyphus" / "evidence"
 MANIFEST_PATH = REPO_ROOT / "models" / "manifest.yaml"
-ADDON_CONFIG = REPO_ROOT / "addon" / "homewake-bcresnet" / "config.yaml"
+ADDON_CONFIG = REPO_ROOT / "addon" / "homewakeword-bcresnet" / "config.yaml"
 
 
 def test_review_code_quality_passes_for_task14_surface() -> None:
@@ -45,7 +45,7 @@ def test_final_runtime_validation_runs_local_repo_checks_without_harness() -> No
         MANIFEST_PATH,
         addon_config_path=ADDON_CONFIG,
         ha_harness=None,
-        addon_image="local/homewake-bcresnet",
+        addon_image="local/homewakeword-bcresnet",
     )
     validation = cast(dict[str, Any], report["validation"])
 
@@ -82,7 +82,7 @@ def test_final_runtime_validation_integrates_ha_smoke_when_harness_is_provided()
             / "harness"
             / "ha-supervised"
             / "docker-compose.yml",
-            addon_image="local/homewake-bcresnet",
+            addon_image="local/homewakeword-bcresnet",
         )
 
     validation = cast(dict[str, Any], report["validation"])

@@ -10,7 +10,7 @@ import sys
 from scripts.validate_repo import REQUIRED_REVIEW_SECTIONS
 
 
-REVIEW_ARTIFACT_MARKER = "<!-- homewake-review-artifact -->"
+REVIEW_ARTIFACT_MARKER = "<!-- homewakeword-review-artifact -->"
 
 
 class ReviewValidationError(ValueError):

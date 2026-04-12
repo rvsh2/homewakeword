@@ -81,8 +81,8 @@ def _validate_schema_shape(config: dict[str, Any]) -> None:
 
 
 def _validate_metadata(config: dict[str, Any]) -> None:
-    if config.get("slug") != "homewake-bcresnet":
-        raise AddonConfigValidationError("config.slug must be 'homewake-bcresnet'")
+    if config.get("slug") != "homewakeword-bcresnet":
+        raise AddonConfigValidationError("config.slug must be 'homewakeword-bcresnet'")
     if config.get("startup") != "services":
         raise AddonConfigValidationError("config.startup must be 'services'")
     if config.get("boot") != "auto":

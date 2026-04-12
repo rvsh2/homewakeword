@@ -1,56 +1,112 @@
-# HomeWake BC-ResNet
+# HomeWakeWord BC-ResNet
 
-Private Home Assistant add-on repository for the HomeWake BC-ResNet wake word runtime.
+HomeWakeWord is a **wake word detection** engine for **Home Assistant**, packaged as a **Home Assistant add-on** and exposed through **Wyoming**.
 
-## Main developer entrypoints
+The project is built on top of ideas and patterns from:
 
-- Local development and fixture replay: [`docs/development.md`](docs/development.md)
-- Release dry-run and review/commit workflow: [`docs/release.md`](docs/release.md)
+- [BC-ResNet](https://github.com/rolyantrauts/bcresnet)
+- [openWakeWord](https://github.com/dscripka/openWakeWord)
+- Home Assistant integration experience around `ha-openwakeword-installer`
 
-## Quick start
+## What it provides
 
-Install the package in editable mode and run the baseline checks:
+- local wake word detection
+- Home Assistant integration through Wyoming
+- support for built-in wake words
+- import of custom models
 
-```bash
-python -m pip install -e .
-make test
-make verify
-make verify-task14
-```
+## Supported wake words
 
-## Core workflows
+Currently available:
 
-### Fixture replay
+- `okay_nabu`
+- `hey_jarvis`
+- `alexa`
+- `hey_mycroft`
+- `hey_rhasspy`
 
-Use fixture replay to validate the packaged wake-word manifests without touching live audio devices:
+## Installation
 
-```bash
-python -m scripts.replay_stream --manifest models/manifest.yaml --wake-word okay_nabu --input tests/fixtures/stream/okay_nabu_positive.wav --expect okay_nabu --json-out .sisyphus/evidence/task-runtime-ok-nabu.json
-```
+### Home Assistant add-on
 
-### Add-on build and local self-test
+1. Add this repository as a custom add-on repository in Home Assistant.
+2. Install the **HomeWakeWord BC-ResNet** add-on.
+3. Start the add-on.
+4. In Home Assistant, add the Wyoming integration and point it to the HomeWakeWord host and port.
+5. Select the wake word you want to use in your Assist voice pipeline.
 
-Validate the add-on metadata, then build and self-test the local container image:
+Default Wyoming endpoint:
 
-```bash
-python -m scripts.validate_addon_config --config addon/homewake-bcresnet/config.yaml --options tests/fixtures/addon/options.valid.json
-make addon-image
-make addon-self-test
-```
+- host: the machine running the add-on
+- port: `10700`
 
-### Artifact policy
+### Custom models
 
-Runtime metadata lives in `models/manifest.yaml`, but model weights are not committed as general-purpose release blobs. The repository uses manifest metadata, OCI labels, and release-dry-run reporting to describe what would ship while keeping publish steps non-destructive in local automation.
+To use custom wake words, place validated model bundles in:
 
-### Custom model workflow
+- `/share/homewakeword/models`
 
-Train or export a bundle with `python -m scripts.train_custom`, then place validated bundles under `/share/homewake/models` for runtime import. Optional `/share/openwakeword` compatibility scanning stays disabled unless explicitly enabled.
+Optional compatibility scanning can also use:
 
-### Autonomous short review before commit
+- `/share/openwakeword`
 
-The repo keeps the planned two-step review gate:
+The add-on will only load models that include a valid manifest and validation metadata.
 
-1. `python -m scripts.generate_review ...` writes the review artifact.
-2. `python -m scripts.commit_with_review ...` validates and uses an existing artifact; it never auto-generates one.
+## How to use it with Home Assistant
 
-See [`docs/release.md`](docs/release.md) for the full dry-run and final-gate workflow.
+1. Build or install the `homewakeword-bcresnet` add-on.
+2. Start the add-on.
+3. In Home Assistant, add the Wyoming service that points to HomeWakeWord.
+4. Select the wake word in your voice pipeline.
+
+Default add-on configuration:
+
+- host: `0.0.0.0`
+- port: `10700`
+- model manifest: `/app/models/manifest.yaml`
+- custom model directory: `/share/homewakeword/models`
+
+After startup, the add-on exposes a Wyoming service that Home Assistant can use for wake word detection.
+
+## Custom wake words
+
+HomeWakeWord supports custom model import.
+
+Primary import path:
+
+- `/share/homewakeword/models`
+
+Optional compatibility path:
+
+- `/share/openwakeword`
+
+Important: importing a model requires a **full bundle**, not just a model file. A standalone `.tflite` file is not enough. The runtime expects the model, manifest, and validation metadata.
+
+## Technology
+
+- audio frontend: 16 kHz, mono, PCM16
+- detection model: **BC-ResNet**
+- integration layer: **Wyoming**
+- packaging: **Home Assistant add-on**
+
+## Limitations
+
+- this is not a binary drop-in replacement for openWakeWord
+- only properly validated models are advertised by the runtime
+- some behavior depends on the local Docker / Home Assistant Supervisor environment
+
+## Additional documentation
+
+- developer setup: [docs/development.md](docs/development.md)
+- release workflow: [docs/release.md](docs/release.md)
+
+For maintainers, the repository also includes the scripted review workflow based on:
+
+- `python -m scripts.generate_review`
+- `python -m scripts.commit_with_review`
+
+## License
+
+This project is released under the **MIT** license.
+
+See [LICENSE](LICENSE).

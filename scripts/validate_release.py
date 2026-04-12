@@ -7,7 +7,7 @@ from typing import Any
 
 import yaml
 
-from homewake.registry import ManifestValidationError, load_registry
+from homewakeword.registry import ManifestValidationError, load_registry
 
 
 class ReleaseValidationError(ValueError):
