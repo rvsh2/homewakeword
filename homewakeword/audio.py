@@ -9,7 +9,7 @@ import json
 import math
 from pathlib import Path
 import struct
-from typing import Iterable
+from typing import Iterable, Protocol
 import wave
 
 from homewakeword.config import AudioInputConfig, LogMelFrontendConfig
@@ -17,6 +17,14 @@ from homewakeword.config import AudioInputConfig, LogMelFrontendConfig
 
 class AudioFormatError(ValueError):
     """Raised when audio does not satisfy the frozen runtime contract."""
+
+
+class NoiseSuppressionRuntimeError(RuntimeError):
+    """Raised when Speex noise suppression cannot be initialized or used."""
+
+
+class _NoiseSuppressorProtocol(Protocol):
+    def process(self, pcm: bytes) -> bytes: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -166,6 +174,62 @@ class RollingAudioWindow:
         )
 
 
+@dataclass(slots=True)
+class SpeexNoiseSuppressor:
+    """Stateful SpeexDSP noise suppression matching openWakeWord usage."""
+
+    frame_size: int = 160
+    sample_rate_hz: int = 16_000
+    _noise_suppressor: _NoiseSuppressorProtocol | None = None
+
+    def open(self) -> None:
+        if self._noise_suppressor is not None:
+            return
+        try:
+            from speexdsp_ns import NoiseSuppression  # type: ignore
+        except ImportError as exc:  # pragma: no cover - depends on environment
+            raise NoiseSuppressionRuntimeError(
+                "Speex noise suppression requires the 'speexdsp-ns' package"
+            ) from exc
+        self._noise_suppressor = NoiseSuppression.create(
+            self.frame_size, self.sample_rate_hz
+        )
+
+    def close(self) -> None:
+        self._noise_suppressor = None
+
+    def process_chunk(self, chunk: AudioChunk) -> AudioChunk:
+        if self._noise_suppressor is None:
+            raise NoiseSuppressionRuntimeError(
+                "Speex noise suppression is not initialized"
+            )
+        validate_audio_chunk(
+            chunk,
+            AudioInputConfig(
+                sample_rate_hz=self.sample_rate_hz,
+                sample_width_bytes=chunk.sample_width_bytes,
+                channels=chunk.channels,
+                frame_samples=chunk.frame_count,
+                window_seconds=chunk.frame_count / self.sample_rate_hz,
+            ),
+        )
+        samples = struct.unpack("<" + "h" * chunk.frame_count, chunk.pcm)
+        processed_frames: list[bytes] = []
+        for start in range(0, len(samples), self.frame_size):
+            frame = samples[start : start + self.frame_size]
+            processed_frames.append(
+                self._noise_suppressor.process(
+                    struct.pack("<" + "h" * len(frame), *frame)
+                )
+            )
+        return AudioChunk(
+            pcm=b"".join(processed_frames),
+            sample_rate_hz=chunk.sample_rate_hz,
+            sample_width_bytes=chunk.sample_width_bytes,
+            channels=chunk.channels,
+        )
+
+
 def iter_wave_chunks(path: Path, config: AudioInputConfig) -> list[AudioChunk]:
     """Loads a WAV file and returns padded 80 ms chunks."""
 
@@ -223,7 +287,9 @@ def _mel_to_hz(mel: float) -> float:
 
 
 @lru_cache(maxsize=32)
-def _mel_center_frequencies(sample_rate_hz: int, n_mels: int, f_min_hz: float, f_max_hz: float) -> tuple[float, ...]:
+def _mel_center_frequencies(
+    sample_rate_hz: int, n_mels: int, f_min_hz: float, f_max_hz: float
+) -> tuple[float, ...]:
     mel_min = _hz_to_mel(f_min_hz)
     mel_max = _hz_to_mel(f_max_hz)
     if n_mels <= 1:
@@ -242,7 +308,9 @@ def _hamming_window(win_length: int) -> tuple[float, ...]:
     )
 
 
-def _goertzel_power(frame: tuple[float, ...], sample_rate_hz: int, target_frequency_hz: float) -> float:
+def _goertzel_power(
+    frame: tuple[float, ...], sample_rate_hz: int, target_frequency_hz: float
+) -> float:
     if not frame:
         return 0.0
     omega = (2.0 * math.pi * target_frequency_hz) / sample_rate_hz
@@ -270,7 +338,9 @@ def compute_log_mel_features(
 
     expected_window_samples = frontend_config.window_samples(sample_rate_hz)
     if len(samples) != expected_window_samples:
-        raise AudioFormatError(f"expected {expected_window_samples} window samples, got {len(samples)}")
+        raise AudioFormatError(
+            f"expected {expected_window_samples} window samples, got {len(samples)}"
+        )
 
     window = _hamming_window(frontend_config.win_length)
     centers = _mel_center_frequencies(
@@ -279,12 +349,16 @@ def compute_log_mel_features(
         frontend_config.f_min_hz,
         frontend_config.f_max_hz,
     )
-    frame_total = 1 + ((len(samples) - frontend_config.win_length) // frontend_config.hop_length)
+    frame_total = 1 + (
+        (len(samples) - frontend_config.win_length) // frontend_config.hop_length
+    )
     frames: list[tuple[float, ...]] = []
     for frame_index in range(frame_total):
         start = frame_index * frontend_config.hop_length
         raw_frame = samples[start : start + frontend_config.win_length]
-        weighted_frame = tuple(value * weight for value, weight in zip(raw_frame, window, strict=True))
+        weighted_frame = tuple(
+            value * weight for value, weight in zip(raw_frame, window, strict=True)
+        )
         mel_bins = []
         for frequency in centers:
             power = _goertzel_power(weighted_frame, sample_rate_hz, frequency)

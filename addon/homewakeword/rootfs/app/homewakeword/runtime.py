@@ -9,7 +9,10 @@ from pathlib import Path
 from typing import Any
 
 from homewakeword.config import DetectorConfig, HomeWakeWordConfig
-from homewakeword.custom_import import CustomModelImportResult, import_custom_model_bundles
+from homewakeword.custom_import import (
+    CustomModelImportResult,
+    import_custom_model_bundles,
+)
 from homewakeword.detector.bcresnet import BCResNetDetector
 from homewakeword.health import build_runtime_health
 from homewakeword.registry import (
@@ -66,6 +69,8 @@ def build_service_config(
             cooldown=config.detector.cooldown,
             refractory=config.detector.refractory,
             frontend=manifest.frontend,
+            enable_speex_noise_suppression=config.detector.enable_speex_noise_suppression,
+            vad=config.detector.vad,
         ),
         custom_models=config.custom_models,
         server=config.server,

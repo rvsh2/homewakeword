@@ -15,6 +15,7 @@ class DetectorRuntimeState:
     cooldown_remaining_seconds: float = 0.0
     refractory_remaining_seconds: float = 0.0
     armed: bool = True
+    vad_suppressed: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,6 +26,10 @@ class DetectionDecision:
     score: float
     threshold: float
     label: str
+    raw_score: float | None = None
+    vad_score: float | None = None
+    vad_threshold: float | None = None
+    vad_suppressed: bool = False
     state: DetectorRuntimeState = field(default_factory=DetectorRuntimeState)
 
 

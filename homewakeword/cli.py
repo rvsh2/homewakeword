@@ -16,6 +16,7 @@ from homewakeword.config import (
     CustomModelImportConfig,
     DetectorConfig,
     HomeWakeWordConfig,
+    VADConfig,
     WyomingServerConfig,
 )
 from homewakeword.detector.bcresnet import BCResNetRuntimeError
@@ -34,6 +35,9 @@ class ServeArgs:
     custom_model_dir: Path
     openwakeword_compat: bool
     openwakeword_model_dir: Path
+    enable_speex_noise_suppression: bool
+    vad_enabled: bool
+    vad_threshold: float
     self_test: bool
     report: Path | None
 
@@ -93,6 +97,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="Compatibility custom model directory",
     )
     _ = serve.add_argument(
+        "--enable-speex-noise-suppression",
+        action=argparse.BooleanOptionalAction,
+        default=HomeWakeWordConfig().detector.enable_speex_noise_suppression,
+        help="Enable SpeexDSP noise suppression before wake-word inference",
+    )
+    _ = serve.add_argument(
+        "--vad-enabled",
+        action=argparse.BooleanOptionalAction,
+        default=HomeWakeWordConfig().detector.vad.enabled,
+        help="Enable Silero-style VAD gating",
+    )
+    _ = serve.add_argument(
+        "--vad-threshold",
+        type=float,
+        default=HomeWakeWordConfig().detector.vad.threshold,
+        help="VAD threshold in the range 0..1",
+    )
+    _ = serve.add_argument(
         "--self-test",
         action="store_true",
         help="Run a non-interactive startup and detection self-test",
@@ -116,6 +138,11 @@ def _parse_serve_args(namespace: argparse.Namespace) -> ServeArgs:
         custom_model_dir=cast(Path, namespace.custom_model_dir),
         openwakeword_compat=cast(bool, namespace.openwakeword_compat),
         openwakeword_model_dir=cast(Path, namespace.openwakeword_model_dir),
+        enable_speex_noise_suppression=cast(
+            bool, namespace.enable_speex_noise_suppression
+        ),
+        vad_enabled=cast(bool, namespace.vad_enabled),
+        vad_threshold=cast(float, namespace.vad_threshold),
         self_test=cast(bool, namespace.self_test),
         report=cast(Path | None, namespace.report),
     )
@@ -126,6 +153,11 @@ def _build_config(args: ServeArgs) -> HomeWakeWordConfig:
         detector=DetectorConfig(
             backend=args.detector_backend,
             manifest_path=args.manifest,
+            enable_speex_noise_suppression=args.enable_speex_noise_suppression,
+            vad=VADConfig(
+                enabled=args.vad_enabled,
+                threshold=args.vad_threshold,
+            ),
         ),
         custom_models=CustomModelImportConfig(
             enabled=args.custom_models,

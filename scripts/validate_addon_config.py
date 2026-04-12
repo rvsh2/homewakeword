@@ -165,6 +165,20 @@ def _validate_against_schema(config: dict[str, Any], options: dict[str, Any]) ->
         options["openwakeword_model_dir"],
         option_name="openwakeword_model_dir",
     )
+    _ = _require_bool(
+        options["enable_speex_noise_suppression"],
+        option_name="enable_speex_noise_suppression",
+    )
+    _ = _require_bool(options["vad_enabled"], option_name="vad_enabled")
+    vad_threshold = options["vad_threshold"]
+    if not isinstance(vad_threshold, (float, int)) or isinstance(vad_threshold, bool):
+        raise AddonConfigValidationError(
+            "option 'vad_threshold' must be a float between 0 and 1"
+        )
+    if not (0.0 <= float(vad_threshold) <= 1.0):
+        raise AddonConfigValidationError(
+            "option 'vad_threshold' must be between 0 and 1"
+        )
 
     log_level = options["log_level"]
     if log_level not in _ALLOWED_LOG_LEVELS:

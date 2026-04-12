@@ -67,6 +67,18 @@ class DetectorConfig:
     cooldown: CooldownConfig = field(default_factory=CooldownConfig)
     refractory: RefractoryConfig = field(default_factory=RefractoryConfig)
     frontend: LogMelFrontendConfig = field(default_factory=LogMelFrontendConfig)
+    enable_speex_noise_suppression: bool = False
+    vad: "VADConfig" = field(default_factory=lambda: VADConfig())
+
+
+@dataclass(frozen=True, slots=True)
+class VADConfig:
+    """Optional Silero-style VAD gating configuration."""
+
+    enabled: bool = False
+    threshold: float = 0.5
+    n_threads: int = 1
+    model_path: Path | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,5 +105,7 @@ class HomeWakeWordConfig:
 
     audio: AudioInputConfig = field(default_factory=AudioInputConfig)
     detector: DetectorConfig = field(default_factory=DetectorConfig)
-    custom_models: CustomModelImportConfig = field(default_factory=CustomModelImportConfig)
+    custom_models: CustomModelImportConfig = field(
+        default_factory=CustomModelImportConfig
+    )
     server: WyomingServerConfig = field(default_factory=WyomingServerConfig)

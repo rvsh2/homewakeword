@@ -4,11 +4,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+import numpy as np
+
 from homewakeword.audio import (
     AudioChunk,
     AudioFormatError,
     FrontendFeatures,
+    NoiseSuppressionRuntimeError,
     RollingAudioWindow,
+    SpeexNoiseSuppressor,
     frontend_features_from_window,
 )
 from homewakeword.config import AudioInputConfig, DetectorConfig
@@ -17,7 +21,12 @@ from homewakeword.detector.streaming import (
     DetectorLoopCounters,
     StreamingDetectionStateMachine,
 )
-from homewakeword.registry import ManifestValidationError, ModelManifest, validate_manifest
+from homewakeword.registry import (
+    ManifestValidationError,
+    ModelManifest,
+    validate_manifest,
+)
+from homewakeword.vad import SileroVAD, VADRuntimeError
 
 
 class BCResNetRuntimeError(RuntimeError):
@@ -40,15 +49,25 @@ class BCResNetStreamingFrontend:
     audio_config: AudioInputConfig = field(default_factory=AudioInputConfig)
     detector_config: DetectorConfig = field(default_factory=DetectorConfig)
     _window: RollingAudioWindow = field(init=False)
+    _noise_suppressor: SpeexNoiseSuppressor | None = field(default=None, init=False)
 
     def __post_init__(self) -> None:
         self._window = RollingAudioWindow(self.audio_config)
+        if self.detector_config.enable_speex_noise_suppression:
+            self._noise_suppressor = SpeexNoiseSuppressor(
+                sample_rate_hz=self.audio_config.sample_rate_hz
+            )
 
     def reset(self) -> None:
         self._window.reset()
 
     def process_chunk(self, chunk: AudioChunk) -> FrontendFeatures:
-        window = self._window.append(chunk)
+        processed_chunk = (
+            chunk
+            if self._noise_suppressor is None
+            else self._noise_suppressor.process_chunk(chunk)
+        )
+        window = self._window.append(processed_chunk)
         return frontend_features_from_window(
             window=window,
             sample_rate_hz=self.audio_config.sample_rate_hz,
@@ -68,6 +87,7 @@ class BCResNetDetector:
     _last_features: FrontendFeatures | None = field(default=None, init=False)
     _runtime: BCResNetRuntimeHandle | None = field(default=None, init=False)
     _loop: StreamingDetectionStateMachine = field(init=False)
+    _vad: SileroVAD | None = field(default=None, init=False)
 
     def __post_init__(self) -> None:
         self._frontend = BCResNetStreamingFrontend(
@@ -127,18 +147,51 @@ class BCResNetDetector:
         energy = (features.chunk_rms * 0.75) + (features.chunk_peak_abs * 0.25)
         return round(min(1.0, (energy * 3.0 * artifact_gain) + hash_bias), 6)
 
+    def _apply_vad(
+        self, chunk: AudioChunk, raw_score: float
+    ) -> tuple[float, float | None, bool]:
+        if not self.config.vad.enabled:
+            return raw_score, None, False
+        if self._vad is None:
+            self._loop.record_runtime_failure()
+            raise BCResNetRuntimeError("VAD runtime is enabled but not initialized")
+        samples = np.frombuffer(chunk.pcm, dtype=np.int16)
+        self._vad(samples)
+        vad_score = round(self._vad.recent_max_score(), 6)
+        if vad_score < self.config.vad.threshold:
+            self._loop.record_vad_suppression()
+            return 0.0, vad_score, True
+        return raw_score, vad_score, False
+
     def open(self) -> None:
         if self._is_open:
             return
         self.reset()
         try:
+            if self._frontend._noise_suppressor is not None:
+                self._frontend._noise_suppressor.open()
             self._runtime = self._open_runtime()
-        except (BCResNetRuntimeError, ManifestValidationError):
+            if self.config.vad.enabled:
+                self._vad = SileroVAD(self.config.vad)
+                self._vad.open()
+        except (
+            BCResNetRuntimeError,
+            ManifestValidationError,
+            NoiseSuppressionRuntimeError,
+        ):
             self._loop.record_model_load_failure()
             raise
+        except VADRuntimeError as exc:
+            self._loop.record_runtime_failure()
+            raise BCResNetRuntimeError(str(exc)) from exc
         self._is_open = True
 
     def close(self) -> None:
+        if self._frontend._noise_suppressor is not None:
+            self._frontend._noise_suppressor.close()
+        if self._vad is not None:
+            self._vad.close()
+            self._vad = None
         self._runtime = None
         self._is_open = False
 
@@ -146,6 +199,12 @@ class BCResNetDetector:
         self._frontend.reset()
         self._last_features = None
         self._loop.reset()
+        if self._frontend._noise_suppressor is not None and self._is_open:
+            self._frontend._noise_suppressor.close()
+            self._frontend._noise_suppressor.open()
+        if self._vad is not None:
+            self._vad.close()
+            self._vad.open()
 
     def process(self, chunk: AudioChunk) -> DetectionDecision:
         """Update frontend state and emit suppression-aware detection decisions."""
@@ -158,7 +217,8 @@ class BCResNetDetector:
         except AudioFormatError:
             self._loop.record_invalid_frame()
             raise
-        score = self._score_features(self._last_features)
+        raw_score = self._score_features(self._last_features)
+        score, vad_score, vad_suppressed = self._apply_vad(chunk, raw_score)
         detected, state = self._loop.evaluate(
             score=score,
             threshold=self.config.threshold,
@@ -169,5 +229,16 @@ class BCResNetDetector:
             score=score,
             threshold=self.config.threshold,
             label=self.manifest.wake_word,
-            state=state,
+            raw_score=raw_score,
+            vad_score=vad_score,
+            vad_threshold=self.config.vad.threshold
+            if self.config.vad.enabled
+            else None,
+            vad_suppressed=vad_suppressed,
+            state=type(state)(
+                cooldown_remaining_seconds=state.cooldown_remaining_seconds,
+                refractory_remaining_seconds=state.refractory_remaining_seconds,
+                armed=state.armed,
+                vad_suppressed=vad_suppressed,
+            ),
         )

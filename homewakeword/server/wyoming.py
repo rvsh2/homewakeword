@@ -42,6 +42,8 @@ class WyomingRuntime:
         decision = self.detector.process(chunk)
         if decision.detected:
             event_type = DetectionEventType.DETECTION
+        elif decision.vad_suppressed:
+            event_type = DetectionEventType.SUPPRESSED_VAD
         elif decision.state.cooldown_remaining_seconds > 0:
             event_type = DetectionEventType.SUPPRESSED_COOLDOWN
         elif decision.state.refractory_remaining_seconds > 0:

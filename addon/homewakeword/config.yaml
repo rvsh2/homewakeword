@@ -26,6 +26,9 @@ options:
   custom_model_dir: /share/homewakeword/models
   openwakeword_compat: false
   openwakeword_model_dir: /share/openwakeword
+  enable_speex_noise_suppression: false
+  vad_enabled: false
+  vad_threshold: 0.5
   log_level: info
 schema:
   host: str
@@ -36,4 +39,7 @@ schema:
   custom_model_dir: str
   openwakeword_compat: bool
   openwakeword_model_dir: str
+  enable_speex_noise_suppression: bool
+  vad_enabled: bool
+  vad_threshold: float
   log_level: str

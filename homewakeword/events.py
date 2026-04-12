@@ -13,6 +13,7 @@ class DetectionEventType(StrEnum):
     """Event categories emitted by the runtime."""
 
     DETECTION = "detection"
+    SUPPRESSED_VAD = "suppressed_vad"
     SUPPRESSED_COOLDOWN = "suppressed_cooldown"
     SUPPRESSED_REFRACTORY = "suppressed_refractory"
     SCORED = "scored"

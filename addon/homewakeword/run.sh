@@ -39,8 +39,17 @@ if options.get("openwakeword_compat", False):
 else:
     args.append("--no-openwakeword-compat")
 args.extend(["--openwakeword-model-dir", str(options.get("openwakeword_model_dir", "/share/openwakeword"))])
+if options.get("enable_speex_noise_suppression", False):
+    args.append("--enable-speex-noise-suppression")
+else:
+    args.append("--no-enable-speex-noise-suppression")
+if options.get("vad_enabled", False):
+    args.append("--vad-enabled")
+else:
+    args.append("--no-vad-enabled")
+args.extend(["--vad-threshold", str(options.get("vad_threshold", 0.5))])
 os.execvp(args[0], args)
 PYADDON
 fi
 
-exec python -m homewakeword.cli serve --host 0.0.0.0 --port 10700 --custom-models --custom-model-dir /share/homewakeword/models --no-openwakeword-compat --openwakeword-model-dir /share/openwakeword
+exec python -m homewakeword.cli serve --host 0.0.0.0 --port 10700 --custom-models --custom-model-dir /share/homewakeword/models --no-openwakeword-compat --openwakeword-model-dir /share/openwakeword --no-enable-speex-noise-suppression --no-vad-enabled --vad-threshold 0.5
