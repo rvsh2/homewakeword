@@ -52,17 +52,28 @@ def test_self_test_report_includes_inventory_provenance_and_diagnostics(
         dict[str, object], json.loads(report_path.read_text(encoding="utf-8"))
     )
     loaded_models = cast(list[dict[str, object]], payload["loaded_models"])
+    startup_resources = cast(dict[str, object], payload["startup_resources"])
     startup_health = cast(dict[str, object], payload["startup_health"])
     shutdown_health = cast(dict[str, object], payload["shutdown_health"])
     startup_diagnostics = cast(dict[str, object], startup_health["diagnostics"])
+    startup_process_resources = cast(
+        dict[str, object], startup_diagnostics["process_resources"]
+    )
+    startup_duration_ms = cast(float, payload["startup_duration_ms"])
 
     assert result.status == "ok"
     assert payload["health_status"] == "ready"
+    assert startup_duration_ms > 0.0
+    assert cast(int, startup_resources["rss_bytes"]) > 0
     assert loaded_models[0]["wake_word"] == "ok_nabu"
     assert loaded_models[0]["license"] == "CC-BY-4.0"
     assert loaded_models[0]["hash_verified"] is True
     assert loaded_models[0]["release_approved"] is True
     assert startup_health["overall"] == "ready"
+    assert startup_health["classification"] == "healthy"
     assert shutdown_health["overall"] == "degraded"
+    assert shutdown_health["classification"] == "degraded"
     assert startup_diagnostics["service_uri"] == "tcp://127.0.0.1:10400"
     assert startup_diagnostics["loaded_model_count"] == 1
+    assert startup_diagnostics["startup_duration_ms"] == startup_duration_ms
+    assert cast(int, startup_process_resources["rss_bytes"]) > 0
