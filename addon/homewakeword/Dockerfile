@@ -7,13 +7,13 @@ WORKDIR /app
 
 COPY . /build-context
 
-RUN python -m pip install --no-cache-dir "PyYAML>=6" \
+RUN python -m pip install --no-cache-dir "PyYAML>=6" "wyoming>=1.6.0" \
     && if [ -d /build-context/rootfs/app ]; then \
          src=/build-context/rootfs/app; \
          run=/build-context/run.sh; \
-        elif [ -d /build-context/addon/homewakeword-bcresnet/rootfs/app ]; then \
-         src=/build-context/addon/homewakeword-bcresnet/rootfs/app; \
-         run=/build-context/addon/homewakeword-bcresnet/run.sh; \
+        elif [ -d /build-context/addon/homewakeword/rootfs/app ]; then \
+         src=/build-context/addon/homewakeword/rootfs/app; \
+         run=/build-context/addon/homewakeword/run.sh; \
        else \
          echo "missing add-on app bundle in build context" >&2; \
          exit 1; \

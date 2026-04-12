@@ -161,7 +161,8 @@ def _serve(args: argparse.Namespace) -> int:
         if serve_args.self_test:
             result = run_self_test(service, report_path=serve_args.report)
             print(
-                f"self-test passed: wake_words={','.join(result.loaded_wake_words)} health={result.health_status} uri={result.service_uri}"
+                f"self-test passed: wake_words={','.join(result.loaded_wake_words)} health={result.health_status} uri={result.service_uri}",
+                flush=True,
             )
             return 0
 
@@ -170,7 +171,8 @@ def _serve(args: argparse.Namespace) -> int:
         try:
             description = server.describe()
             print(
-                f"ready: uri={description.uri} wake_words={','.join(wake_word.name for wake_word in description.wake_words)}"
+                f"ready: uri={description.uri} wake_words={','.join(wake_word.name for wake_word in description.wake_words)}",
+                flush=True,
             )
             _serve_forever()
         finally:
@@ -182,7 +184,7 @@ def _serve(args: argparse.Namespace) -> int:
         RuntimeError,
         OSError,
     ) as exc:
-        print(str(exc), file=sys.stderr)
+        print(str(exc), file=sys.stderr, flush=True)
         return 1
     return 0
 

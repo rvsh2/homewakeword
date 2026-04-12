@@ -9,7 +9,7 @@ models:
     threshold: 0.55
     provenance:
       source: private://homewakeword/release-assets/v1/okay_nabu.tflite
-      training_recipe: homewakeword-bcresnet-v1-pack
+      training_recipe: homewakeword-v1-pack
       training_recipe_version: 1.0.0
       artifact_sha256: 8af663e2cd6f1b20c74596213f0ab033fe701b9826f5e0ad501595199228fca8
       license: LicenseRef-HomeWakeWord-Internal-Eval
@@ -42,7 +42,7 @@ models:
     threshold: 0.55
     provenance:
       source: private://homewakeword/release-assets/v1/hey_jarvis.tflite
-      training_recipe: homewakeword-bcresnet-v1-pack
+      training_recipe: homewakeword-v1-pack
       training_recipe_version: 1.0.0
       artifact_sha256: 8af663e2cd6f1b20c74596213f0ab033fe701b9826f5e0ad501595199228fca8
       license: LicenseRef-HomeWakeWord-Internal-Eval
@@ -75,7 +75,7 @@ models:
     threshold: 0.55
     provenance:
       source: private://homewakeword/release-assets/v1/alexa.tflite
-      training_recipe: homewakeword-bcresnet-v1-pack
+      training_recipe: homewakeword-v1-pack
       training_recipe_version: 1.0.0
       artifact_sha256: 8af663e2cd6f1b20c74596213f0ab033fe701b9826f5e0ad501595199228fca8
       license: LicenseRef-HomeWakeWord-Internal-Eval
@@ -108,7 +108,7 @@ models:
     threshold: 0.55
     provenance:
       source: private://homewakeword/release-assets/v1/hey_mycroft.tflite
-      training_recipe: homewakeword-bcresnet-v1-pack
+      training_recipe: homewakeword-v1-pack
       training_recipe_version: 1.0.0
       artifact_sha256: 8af663e2cd6f1b20c74596213f0ab033fe701b9826f5e0ad501595199228fca8
       license: LicenseRef-HomeWakeWord-Internal-Eval
@@ -141,7 +141,7 @@ models:
     threshold: 0.55
     provenance:
       source: private://homewakeword/release-assets/v1/hey_rhasspy.tflite
-      training_recipe: homewakeword-bcresnet-v1-pack
+      training_recipe: homewakeword-v1-pack
       training_recipe_version: 1.0.0
       artifact_sha256: 8af663e2cd6f1b20c74596213f0ab033fe701b9826f5e0ad501595199228fca8
       license: LicenseRef-HomeWakeWord-Internal-Eval
