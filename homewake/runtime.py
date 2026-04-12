@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from homewake.config import DetectorConfig, HomeWakeConfig
+from homewake.custom_import import CustomModelImportResult, import_custom_model_bundles
 from homewake.detector.bcresnet import BCResNetDetector
 from homewake.health import build_runtime_health
 from homewake.registry import (
@@ -15,6 +16,7 @@ from homewake.registry import (
     ModelManifest,
     ModelRegistry,
     load_registry,
+    merge_registries,
 )
 from homewake.server.wyoming import WyomingRuntime, WyomingServer
 
@@ -38,6 +40,7 @@ class HomeWakeService:
     registry: ModelRegistry
     manifest: ModelManifest
     inventory: tuple[ModelInventoryRecord, ...]
+    custom_imports: CustomModelImportResult
     config_echo: dict[str, object]
     server: WyomingServer
 
@@ -63,6 +66,7 @@ def build_service_config(
             refractory=config.detector.refractory,
             frontend=manifest.frontend,
         ),
+        custom_models=config.custom_models,
         server=config.server,
     )
 
@@ -110,6 +114,12 @@ def collect_runtime_diagnostics(service: HomeWakeService) -> dict[str, object]:
         "loaded_model_count": len(service.inventory),
         "loaded_wake_words": list(service.registry.list_wake_words()),
         "mode": service.manifest.mode,
+        "imported_model_count": len(service.custom_imports.manifests),
+        "imported_wake_words": list(service.custom_imports.imported_wake_words),
+        "imported_manifest_paths": [
+            str(path) for path in service.custom_imports.loaded_manifest_paths
+        ],
+        "custom_import_rejections": list(service.custom_imports.rejected),
     }
     runtime_handle = getattr(detector, "runtime", None)
     if runtime_handle is not None:
@@ -136,7 +146,12 @@ def build_service(config: HomeWakeConfig) -> HomeWakeService:
     """Build a Wyoming-facing service from manifest-backed runtime inputs."""
 
     manifest_path = resolve_manifest_path(config)
-    registry = load_registry(manifest_path, require_artifact=True)
+    base_registry = load_registry(manifest_path, require_artifact=True)
+    custom_imports = import_custom_model_bundles(
+        config.custom_models,
+        base_registry=base_registry,
+    )
+    registry = merge_registries(base_registry, custom_imports.manifests)
     manifest = registry.resolve(config.detector.backend)
     service_config = build_service_config(config, manifest)
     inventory = registry.inventory(verify_hash=True)
@@ -158,6 +173,7 @@ def build_service(config: HomeWakeConfig) -> HomeWakeService:
         registry=registry,
         manifest=manifest,
         inventory=inventory,
+        custom_imports=custom_imports,
         config_echo=config_echo,
         server=server,
     )

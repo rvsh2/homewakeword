@@ -19,6 +19,8 @@ class SelfTestResult:
     health_status: str
     loaded_wake_words: tuple[str, ...]
     loaded_models: tuple[ModelInventoryRecord, ...]
+    imported_wake_words: tuple[str, ...]
+    import_rejections: tuple[str, ...]
     detection_emitted: bool
     detection_wake_word: str | None
     service_uri: str
@@ -32,6 +34,8 @@ class SelfTestResult:
             "health_status": self.health_status,
             "loaded_wake_words": list(self.loaded_wake_words),
             "loaded_models": [model.as_report_dict() for model in self.loaded_models],
+            "imported_wake_words": list(self.imported_wake_words),
+            "import_rejections": list(self.import_rejections),
             "detection_emitted": self.detection_emitted,
             "detection_wake_word": self.detection_wake_word,
             "service_uri": self.service_uri,
@@ -76,6 +80,8 @@ def run_self_test(
             wake_word.name for wake_word in server.describe().wake_words
         ),
         loaded_models=service.inventory,
+        imported_wake_words=service.custom_imports.imported_wake_words,
+        import_rejections=service.custom_imports.rejected,
         detection_emitted=detection_event is not None,
         detection_wake_word=None
         if detection_event is None
