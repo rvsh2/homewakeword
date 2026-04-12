@@ -1,7 +1,7 @@
 services:
   homewakeword:
-    container_name: homewakeword-bcresnet
-    image: local/homewakeword-bcresnet
+    container_name: homewakeword
+    image: local/homewakeword
     restart: unless-stopped
     ports:
       - "0.0.0.0:10700:10700"
