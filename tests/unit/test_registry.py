@@ -7,6 +7,7 @@ import pytest
 from homewake.registry import (
     ManifestValidationError,
     ModelRegistry,
+    ProvenanceStatus,
     load_manifest,
     load_registry,
 )
@@ -24,10 +25,24 @@ def test_load_manifest_parses_valid_tflite_fixture() -> None:
     assert manifest.model_path == (FIXTURE_ROOT / "fixture_model.tflite").resolve()
     assert manifest.audio.sample_rate_hz == 16_000
     assert manifest.detector_config().threshold == 0.42
+    assert manifest.provenance is not None
+    assert manifest.provenance.provenance_status is ProvenanceStatus.APPROVED
+
+
+def test_manifest_inventory_verifies_hash_for_detector_fixture() -> None:
+    manifest = load_manifest(FIXTURE_ROOT / "valid_bcresnet_tflite.yaml")
+
+    inventory = manifest.inventory_record(verify_hash=True)
+
+    assert inventory.provenance_status == "approved"
+    assert inventory.hash_verified is True
+    assert inventory.expected_sha256 == inventory.actual_sha256
 
 
 def test_load_manifest_allows_frontend_only_fixture_for_replay() -> None:
-    manifest = load_manifest(FIXTURE_ROOT / "frontend_only.yaml", require_artifact=False)
+    manifest = load_manifest(
+        FIXTURE_ROOT / "frontend_only.yaml", require_artifact=False
+    )
 
     assert manifest.mode == "frontend_only"
     assert manifest.model_path is None
@@ -44,6 +59,11 @@ def test_load_manifest_rejects_missing_artifact() -> None:
         load_manifest(FIXTURE_ROOT / "invalid_missing_model.yaml")
 
 
+def test_load_manifest_rejects_missing_provenance_hash() -> None:
+    with pytest.raises(ManifestValidationError, match="artifact_sha256"):
+        load_manifest(FIXTURE_ROOT / "missing_hash.yaml")
+
+
 def test_load_manifest_rejects_unsupported_backend() -> None:
     with pytest.raises(ManifestValidationError, match="unsupported detector backend"):
         load_manifest(FIXTURE_ROOT / "invalid_unsupported_backend.yaml")
@@ -54,14 +74,18 @@ def test_load_manifest_rejects_suffix_mismatch() -> None:
         load_manifest(FIXTURE_ROOT / "invalid_suffix_mismatch.yaml")
 
 
-def test_load_manifest_rejects_onnx_without_feature_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_load_manifest_rejects_onnx_without_feature_flag(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.delenv("HOMEWAKE_ENABLE_ONNX", raising=False)
 
     with pytest.raises(ManifestValidationError, match="requires explicit opt-in"):
         load_manifest(FIXTURE_ROOT / "valid_bcresnet_onnx.yaml")
 
 
-def test_load_manifest_accepts_onnx_with_feature_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_load_manifest_accepts_onnx_with_feature_flag(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("HOMEWAKE_ENABLE_ONNX", "1")
 
     manifest = load_manifest(FIXTURE_ROOT / "valid_bcresnet_onnx.yaml")

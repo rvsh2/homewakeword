@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import StrEnum
+import hashlib
 import os
 from pathlib import Path
+import re
 from typing import Any
 
 import yaml
@@ -18,10 +21,97 @@ _FRAMEWORK_SUFFIXES = {
     "tflite": ".tflite",
     "onnx": ".onnx",
 }
+_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
 class ManifestValidationError(ValueError):
     """Raised when a model manifest is missing required data or is invalid."""
+
+
+class ProvenanceStatus(StrEnum):
+    """Review state for artifact provenance and bundling eligibility."""
+
+    APPROVED = "approved"
+    UNAPPROVED = "unapproved"
+    UNVERIFIABLE = "unverifiable"
+
+
+@dataclass(frozen=True, slots=True)
+class ArtifactProvenance:
+    """Explicit provenance metadata required for shipped detector artifacts."""
+
+    source: str
+    training_recipe: str
+    training_recipe_version: str
+    artifact_sha256: str
+    license: str
+    provenance_status: ProvenanceStatus
+
+
+@dataclass(frozen=True, slots=True)
+class ModelInventoryRecord:
+    """Neutral runtime inventory view derived from manifest metadata."""
+
+    model_id: str
+    wake_word: str
+    version: str
+    backend: str
+    framework: str
+    threshold: float
+    mode: str
+    artifact_name: str | None
+    artifact_size_bytes: int | None
+    source: str | None
+    training_recipe: str | None
+    training_recipe_version: str | None
+    license: str | None
+    provenance_status: str | None
+    expected_sha256: str | None
+    actual_sha256: str | None
+    hash_verified: bool | None
+
+    @property
+    def release_approved(self) -> bool:
+        if self.mode != "detector":
+            return True
+        return (
+            self.provenance_status == ProvenanceStatus.APPROVED.value
+            and self.expected_sha256 is not None
+            and self.hash_verified is True
+        )
+
+    def as_public_dict(self) -> dict[str, object]:
+        payload: dict[str, object] = {
+            "model_id": self.model_id,
+            "wake_word": self.wake_word,
+            "version": self.version,
+            "backend": self.backend,
+            "framework": self.framework,
+            "threshold": self.threshold,
+            "mode": self.mode,
+            "provenance_status": self.provenance_status,
+            "hash_verified": self.hash_verified,
+        }
+        if self.artifact_name is not None:
+            payload["artifact"] = self.artifact_name
+        if self.license is not None:
+            payload["license"] = self.license
+        return payload
+
+    def as_report_dict(self) -> dict[str, object]:
+        payload = self.as_public_dict()
+        payload.update(
+            {
+                "artifact_size_bytes": self.artifact_size_bytes,
+                "source": self.source,
+                "training_recipe": self.training_recipe,
+                "training_recipe_version": self.training_recipe_version,
+                "expected_sha256": self.expected_sha256,
+                "actual_sha256": self.actual_sha256,
+                "release_approved": self.release_approved,
+            }
+        )
+        return payload
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,6 +128,7 @@ class ModelManifest:
     threshold: float = 1.0
     audio: AudioInputConfig = field(default_factory=AudioInputConfig)
     frontend: LogMelFrontendConfig = field(default_factory=LogMelFrontendConfig)
+    provenance: ArtifactProvenance | None = None
     manifest_path: Path | None = None
 
     @property
@@ -56,6 +147,47 @@ class ModelManifest:
             frontend=self.frontend,
         )
 
+    def inventory_record(self, *, verify_hash: bool = False) -> ModelInventoryRecord:
+        artifact_name = None if self.model_path is None else self.model_path.name
+        artifact_size_bytes = None
+        actual_sha256 = None
+        hash_verified = None
+        if self.model_path is not None and self.model_path.exists():
+            artifact_size_bytes = self.model_path.stat().st_size
+            if verify_hash and self.provenance is not None:
+                actual_sha256 = _sha256_file(self.model_path)
+                hash_verified = actual_sha256 == self.provenance.artifact_sha256
+        elif self.model_path is not None and verify_hash:
+            hash_verified = False
+
+        return ModelInventoryRecord(
+            model_id=self.model_id,
+            wake_word=self.wake_word,
+            version=self.version,
+            backend=self.backend,
+            framework=self.framework,
+            threshold=self.threshold,
+            mode=self.mode,
+            artifact_name=artifact_name,
+            artifact_size_bytes=artifact_size_bytes,
+            source=None if self.provenance is None else self.provenance.source,
+            training_recipe=None
+            if self.provenance is None
+            else self.provenance.training_recipe,
+            training_recipe_version=None
+            if self.provenance is None
+            else self.provenance.training_recipe_version,
+            license=None if self.provenance is None else self.provenance.license,
+            provenance_status=None
+            if self.provenance is None
+            else self.provenance.provenance_status.value,
+            expected_sha256=None
+            if self.provenance is None
+            else self.provenance.artifact_sha256,
+            actual_sha256=actual_sha256,
+            hash_verified=hash_verified,
+        )
+
 
 def _as_mapping(data: Any, *, context: str) -> dict[str, Any]:
     if data is None:
@@ -66,12 +198,16 @@ def _as_mapping(data: Any, *, context: str) -> dict[str, Any]:
 
 
 def _require_string(
-    data: dict[str, Any], key: str, *, default: str | None = None
+    data: dict[str, Any],
+    key: str,
+    *,
+    default: str | None = None,
+    context: str = "manifest",
 ) -> str:
     value = data.get(key, default)
     if value is None or not isinstance(value, str) or not value.strip():
         raise ManifestValidationError(
-            f"manifest field '{key}' must be a non-empty string"
+            f"{context} field '{key}' must be a non-empty string"
         )
     return value.strip()
 
@@ -89,6 +225,17 @@ def _coerce_framework(value: str | None) -> str:
     return framework
 
 
+def _coerce_provenance_status(value: str | None) -> ProvenanceStatus:
+    normalized = (value or "").strip().lower()
+    try:
+        return ProvenanceStatus(normalized)
+    except ValueError as exc:
+        raise ManifestValidationError(
+            "manifest.provenance field 'provenance_status' must be one of: "
+            + ", ".join(status.value for status in ProvenanceStatus)
+        ) from exc
+
+
 def _resolve_model_path(raw_path: str | None, manifest_path: Path) -> Path | None:
     if raw_path is None:
         return None
@@ -100,6 +247,66 @@ def _resolve_model_path(raw_path: str | None, manifest_path: Path) -> Path | Non
     if not model_path.is_absolute():
         model_path = (manifest_path.parent / model_path).resolve()
     return model_path
+
+
+def _parse_provenance(
+    data: Any, *, artifact_required: bool
+) -> ArtifactProvenance | None:
+    if data is None:
+        if artifact_required:
+            raise ManifestValidationError(
+                "detector manifests must define a provenance mapping"
+            )
+        return None
+
+    provenance_data = _as_mapping(data, context="manifest.provenance")
+    artifact_sha256 = _require_string(
+        provenance_data,
+        "artifact_sha256",
+        context="manifest.provenance",
+    )
+    if _SHA256_RE.fullmatch(artifact_sha256) is None:
+        raise ManifestValidationError(
+            "manifest.provenance field 'artifact_sha256' must be a 64-character lowercase hex SHA-256"
+        )
+
+    return ArtifactProvenance(
+        source=_require_string(
+            provenance_data,
+            "source",
+            context="manifest.provenance",
+        ),
+        training_recipe=_require_string(
+            provenance_data,
+            "training_recipe",
+            context="manifest.provenance",
+        ),
+        training_recipe_version=_require_string(
+            provenance_data,
+            "training_recipe_version",
+            context="manifest.provenance",
+        ),
+        artifact_sha256=artifact_sha256,
+        license=_require_string(
+            provenance_data,
+            "license",
+            context="manifest.provenance",
+        ),
+        provenance_status=_coerce_provenance_status(
+            provenance_data.get("provenance_status")
+        ),
+    )
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while True:
+            chunk = handle.read(65_536)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def validate_manifest(
@@ -116,6 +323,10 @@ def validate_manifest(
     if require_artifact and manifest.model_path is None:
         raise ManifestValidationError("detector manifests must define 'model_path'")
     if manifest.model_path is not None:
+        if manifest.provenance is None:
+            raise ManifestValidationError(
+                "detector manifests must define explicit provenance metadata"
+            )
         suffix = _FRAMEWORK_SUFFIXES[manifest.framework]
         if manifest.model_path.suffix.lower() != suffix:
             raise ManifestValidationError(
@@ -128,6 +339,24 @@ def validate_manifest(
     return manifest
 
 
+def validate_release_manifest(path: Path) -> ModelInventoryRecord:
+    """Load a shipped detector manifest and enforce provenance/hash release gates."""
+
+    manifest = load_manifest(path, require_artifact=True)
+    inventory = manifest.inventory_record(verify_hash=True)
+    if inventory.provenance_status != ProvenanceStatus.APPROVED.value:
+        raise ManifestValidationError(
+            "release manifest requires provenance_status=approved; "
+            f"got {inventory.provenance_status!r} for model '{inventory.model_id}'"
+        )
+    if inventory.hash_verified is not True:
+        raise ManifestValidationError(
+            "release manifest hash verification failed for model "
+            f"'{inventory.model_id}'"
+        )
+    return inventory
+
+
 @dataclass(frozen=True, slots=True)
 class ModelRegistry:
     """Container for resolved model manifests."""
@@ -138,6 +367,13 @@ class ModelRegistry:
         """Return wake words from the manifest-backed registry source of truth."""
 
         return (self.default_model.wake_word,)
+
+    def inventory(
+        self, *, verify_hash: bool = False
+    ) -> tuple[ModelInventoryRecord, ...]:
+        """Return loaded-model inventory derived from manifest metadata."""
+
+        return (self.default_model.inventory_record(verify_hash=verify_hash),)
 
     def resolve(self, backend: str, *, framework: str | None = None) -> ModelManifest:
         """Return the manifest for a backend and optional framework."""
@@ -210,6 +446,10 @@ def load_manifest(path: Path, *, require_artifact: bool = True) -> ModelManifest
         threshold=float(root.get("threshold", 1.0)),
         audio=audio,
         frontend=frontend,
+        provenance=_parse_provenance(
+            root.get("provenance"),
+            artifact_required=raw_model_path is not None,
+        ),
         manifest_path=manifest_path,
     )
     return validate_manifest(manifest, require_artifact=require_artifact)
