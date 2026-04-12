@@ -29,24 +29,51 @@ class AudioInputConfig:
     sample_width_bytes: int = 2
     channels: int = 1
     frame_samples: int = 1_280
+    window_seconds: float = 1.0
+
+    @property
+    def frame_duration_seconds(self) -> float:
+        return self.frame_samples / self.sample_rate_hz
+
+    @property
+    def window_samples(self) -> int:
+        return int(round(self.sample_rate_hz * self.window_seconds))
+
+
+@dataclass(frozen=True, slots=True)
+class LogMelFrontendConfig:
+    """Frozen task-3 frontend knobs for BC-ResNet-oriented streaming."""
+
+    n_fft: int = 512
+    win_length: int = 480
+    hop_length: int = 160
+    n_mels: int = 40
+    f_min_hz: float = 20.0
+    f_max_hz: float = 7_600.0
+    log_floor: float = 1e-6
+    context_seconds: float = 1.0
+
+    def window_samples(self, sample_rate_hz: int) -> int:
+        return int(round(sample_rate_hz * self.context_seconds))
 
 
 @dataclass(frozen=True, slots=True)
 class DetectorConfig:
     """Detector backend selection and thresholding."""
 
-    backend: str = "bcresnet"
+    backend: str = 'bcresnet'
     threshold: float = 0.5
     manifest_path: Path | None = None
     cooldown: CooldownConfig = field(default_factory=CooldownConfig)
     refractory: RefractoryConfig = field(default_factory=RefractoryConfig)
+    frontend: LogMelFrontendConfig = field(default_factory=LogMelFrontendConfig)
 
 
 @dataclass(frozen=True, slots=True)
 class WyomingServerConfig:
     """Protocol-facing network settings."""
 
-    host: str = "127.0.0.1"
+    host: str = '127.0.0.1'
     port: int = 10_700
 
 
