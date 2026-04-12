@@ -5,6 +5,13 @@ backend: bcresnet
 framework: tflite
 model_path: fixture_model.tflite
 threshold: 0.55
+provenance:
+  source: fixture://tests/ok_nabu_detector.tflite
+  training_recipe: fixture-ok-nabu
+  training_recipe_version: 0.0.1
+  artifact_sha256: b96fed2b844b770ae57ffdef4bc264dea5eb77ce9dd96bcbaf163cf72cbe4282
+  license: CC-BY-4.0
+  provenance_status: approved
 audio:
   sample_rate_hz: 16000
   sample_width_bytes: 2
