@@ -15,6 +15,21 @@ def test_readme_links_split_developer_docs() -> None:
     assert "scripts.commit_with_review" in readme
 
 
+def test_readme_explains_hacs_helper_without_claiming_runtime_install() -> None:
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+
+    assert (
+        "HACS installs only the lightweight **HomeWakeWord** helper integration"
+        in readme
+    )
+    assert (
+        "HACS does **not** install, start, or manage the HomeWakeWord add-on runtime"
+        in readme
+    )
+    assert "built-in **Wyoming** integration" in readme
+    assert "host `homewakeword` and port `10700`" in readme
+
+
 def test_development_doc_covers_required_local_workflows() -> None:
     content = (REPO_ROOT / "docs" / "development.md").read_text(encoding="utf-8")
 
@@ -27,6 +42,8 @@ def test_development_doc_covers_required_local_workflows() -> None:
     assert "make addon-image" in content
     assert "make addon-self-test" in content
     assert "python -m scripts.train_custom" in content
+    assert "HACS helper integration workflow" in content
+    assert "HACS installs only the helper integration" in content
 
 
 def test_release_doc_covers_dry_run_and_two_step_review_gate() -> None:
@@ -40,3 +57,14 @@ def test_release_doc_covers_dry_run_and_two_step_review_gate() -> None:
     assert "python -m scripts.review_code_quality --help" in content
     assert "python -m scripts.final_runtime_validation --help" in content
     assert "python -m scripts.check_scope_fidelity --help" in content
+
+
+def test_release_doc_explains_hacs_contract_truthfully() -> None:
+    content = (REPO_ROOT / "docs" / "release.md").read_text(encoding="utf-8")
+
+    assert "HACS integration release contract" in content
+    assert "ships only an onboarding/helper shim" in content
+    assert (
+        "add-on remains a separate install/start step for the actual runtime" in content
+    )
+    assert "host `homewakeword` and port `10700`" in content

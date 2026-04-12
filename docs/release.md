@@ -17,6 +17,23 @@ The generated report summarizes:
 
 Dry-run mode never publishes OCI images, GitHub releases, or other release assets.
 
+## HACS integration release contract
+
+HACS support in this repository is intentionally narrow:
+
+- `hacs.json` exposes the repository as a HACS-installable custom integration repo.
+- `custom_components/homewakeword/` ships only an onboarding/helper shim.
+- The HomeWakeWord add-on remains a separate install/start step for the actual runtime.
+- Home Assistant still connects through the built-in Wyoming integration at host `homewakeword` and port `10700`.
+
+Release verification should keep those claims honest:
+
+```bash
+python -m pytest tests/docs tests/release -q
+```
+
+The release suite includes contract checks for HACS metadata, custom integration shape, and docs that must continue to say that HACS does not install or manage the add-on runtime.
+
 ## Two-step short review gate
 
 The planned autonomous review flow is intentionally split into two commands.

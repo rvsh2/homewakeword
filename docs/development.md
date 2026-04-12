@@ -10,6 +10,20 @@ python -m scripts.validate_repo
 
 Use `make verify` for the baseline repo gates and `make verify-task14` for the task-14 developer-docs and release-workflow checks.
 
+## HACS helper integration workflow
+
+The repo now exposes a second distribution surface for Home Assistant UI onboarding only:
+
+- `hacs.json` makes the repository HACS-installable as a custom integration repo.
+- `custom_components/homewakeword/` is a helper shim only.
+- The actual wake-word runtime remains the existing HomeWakeWord add-on plus Home Assistant's built-in Wyoming integration.
+
+When validating HACS-facing changes locally, keep the contract explicit:
+
+- HACS installs only the helper integration.
+- The user still installs and starts the add-on separately.
+- The user then configures the built-in Wyoming integration with host `homewakeword` and port `10700`.
+
 ## Fixture replay
 
 Replay is the fastest way to validate detector behavior with committed fixtures instead of live microphones.
@@ -73,3 +87,5 @@ Task-14 verification lives under `tests/docs/` and `tests/release/`:
 python -m pytest tests/docs tests/release -q
 python -m scripts.release_dry_run
 ```
+
+That docs/release suite now includes the HACS contract checks so repository metadata, helper-integration scaffolding, and installation guidance stay truthful.

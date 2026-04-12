@@ -26,14 +26,24 @@ It is built around:
 
 ## Home Assistant installation
 
+### Add-on runtime path
+
 1. Add this repository as a custom add-on repository in Home Assistant.
 2. Install the **HomeWakeWord** add-on.
 3. Start the add-on.
-4. Add the **Wyoming** integration in Home Assistant.
-5. Use:
-   - host: `homewakeword` if Home Assistant is on the same Docker network
-   - port: `10700`
+4. Add the built-in **Wyoming** integration in Home Assistant.
+5. Use host `homewakeword` and port `10700`.
 6. Select the wake word in your Assist configuration.
+
+### HACS helper integration
+
+This repository is also HACS-installable as a custom **Integration**.
+
+- HACS installs only the lightweight **HomeWakeWord** helper integration under `custom_components/`.
+- HACS does **not** install, start, or manage the HomeWakeWord add-on runtime.
+- After installing via HACS, add the **HomeWakeWord** integration for onboarding guidance, then use the built-in **Wyoming** integration against host `homewakeword` and port `10700`.
+
+The actual wake-word runtime distribution model stays the same: HomeWakeWord runs as the existing Home Assistant add-on and exposes Wyoming on port `10700`.
 
 ## Default add-on settings
 
@@ -109,6 +119,15 @@ docker compose up -d
 
 - developer setup: [docs/development.md](docs/development.md)
 - release workflow: [docs/release.md](docs/release.md)
+
+## HACS helper integration
+
+The HACS-installed `homewakeword` integration is an onboarding shim only.
+
+- It creates a config entry so Home Assistant can load the integration.
+- It shows setup guidance reminding you to install/start the **HomeWakeWord** add-on separately.
+- It points you to the built-in **Wyoming** integration with host `homewakeword` and port `10700`.
+- It does not proxy audio, download artifacts, clone repositories, or manage the runtime.
 
 Maintainer tooling includes:
 
