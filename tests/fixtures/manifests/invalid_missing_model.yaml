@@ -1,0 +1,6 @@
+model_id: missing_model
+wake_word: hey_fixture
+version: 1.2.3
+backend: bcresnet
+framework: tflite
+model_path: missing_model.tflite
