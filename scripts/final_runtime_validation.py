@@ -15,6 +15,7 @@ from homewake.config import (
 from homewake.registry import load_registry
 from homewake.runtime import build_service
 from homewake.selftest import run_self_test
+from scripts.ha_smoke import ha_smoke
 from scripts.replay_stream import main as replay_stream_main
 from scripts.validate_release import validate_release
 from scripts.validate_repo import validate_repo
@@ -47,6 +48,7 @@ def final_runtime_validation(
         raise ValueError("repo validation failed: " + "; ".join(repo_errors))
     startup_message = validate_startup(manifest_path)
     release_message = validate_release(manifest_path, addon_config_path)
+    addon_slug = addon_config_path.parent.name
     registry = load_registry(manifest_path, require_artifact=True)
     default_manifest = registry.default_model
     if default_manifest.evaluation is None:
@@ -64,6 +66,7 @@ def final_runtime_validation(
         self_test_path = tmp_root / "self-test.json"
         positive_replay_path = tmp_root / "positive.json"
         negative_replay_path = tmp_root / "negative.json"
+        ha_smoke_report_path = tmp_root / "ha-smoke.json"
         self_test_result = run_self_test(service, report_path=self_test_path)
         positive_exit = replay_stream_main(
             [
@@ -97,14 +100,57 @@ def final_runtime_validation(
             raise ValueError(
                 "fixture replay validation failed during final runtime validation"
             )
+        ha_harness_report: dict[str, Any] | None = None
+        ha_harness_summary: dict[str, Any] = {
+            "path": None if ha_harness is None else str(ha_harness),
+            "exists": None if ha_harness is None else ha_harness.exists(),
+            "executed": False,
+        }
         if ha_harness is not None and not ha_harness.exists():
             limitations.append(
                 f"Home Assistant harness path is missing in this workspace: {ha_harness}"
             )
         elif ha_harness is None:
             limitations.append("Home Assistant supervised harness was not provided")
+        else:
+            ha_harness_report = ha_smoke(
+                ha_harness,
+                addon_slug=addon_slug,
+                addon_image=addon_image,
+                wyoming_port=10400,
+                report_path=ha_smoke_report_path,
+                manifest_path=manifest_path,
+            )
+            subsystems = ha_harness_report.get("subsystems")
+            ha_subsystem = (
+                subsystems.get("ha_harness") if isinstance(subsystems, dict) else None
+            )
+            if not isinstance(ha_subsystem, dict):
+                raise ValueError(
+                    "ha smoke report did not include an ha_harness subsystem"
+                )
+            ha_harness_summary = {
+                **ha_harness_summary,
+                "executed": True,
+                "verdict": ha_harness_report.get("verdict"),
+                "status": ha_subsystem.get("status"),
+                "code": ha_subsystem.get("code"),
+                "detail": ha_subsystem.get("detail"),
+            }
+            ha_status = str(ha_subsystem.get("status", "unknown"))
+            ha_code = str(ha_subsystem.get("code", "UNKNOWN"))
+            ha_detail = str(ha_subsystem.get("detail", ""))
+            if ha_status != "pass":
+                limitations.append(f"Home Assistant harness {ha_code}: {ha_detail}")
+        verdict = "pass"
+        if ha_harness_report is not None:
+            ha_smoke_verdict = str(ha_harness_report.get("verdict", "pass"))
+            if ha_smoke_verdict == "fail":
+                verdict = "fail"
+            elif ha_smoke_verdict == "blocked":
+                verdict = "blocked"
         report = {
-            "verdict": "pass",
+            "verdict": verdict,
             "manifest": str(manifest_path),
             "addon_config": str(addon_config_path),
             "addon_image": addon_image,
@@ -114,6 +160,9 @@ def final_runtime_validation(
                 "self_test_status": self_test_result.status,
                 "positive_replay_exit": positive_exit,
                 "negative_replay_exit": negative_exit,
+                "ha_smoke_verdict": None
+                if ha_harness_report is None
+                else ha_harness_report.get("verdict"),
             },
             "default_wake_word": default_manifest.wake_word,
             "self_test": json.loads(self_test_path.read_text(encoding="utf-8")),
@@ -123,11 +172,7 @@ def final_runtime_validation(
             "negative_replay": json.loads(
                 negative_replay_path.read_text(encoding="utf-8")
             ),
-            "ha_harness": {
-                "path": None if ha_harness is None else str(ha_harness),
-                "exists": None if ha_harness is None else ha_harness.exists(),
-                "executed": False,
-            },
+            "ha_harness": ha_harness_summary,
             "limitations": limitations,
         }
     return report

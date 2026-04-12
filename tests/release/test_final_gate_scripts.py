@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, cast
+from unittest.mock import patch
 
 from scripts.check_scope_fidelity import check_scope_fidelity
 from scripts.final_runtime_validation import final_runtime_validation
@@ -52,3 +53,49 @@ def test_final_runtime_validation_runs_local_repo_checks_without_harness() -> No
     assert validation["self_test_status"] == "ok"
     assert validation["positive_replay_exit"] == 0
     assert validation["negative_replay_exit"] == 0
+    assert validation["ha_smoke_verdict"] is None
+    assert cast(dict[str, Any], report["ha_harness"])["executed"] is False
+
+
+def test_final_runtime_validation_integrates_ha_smoke_when_harness_is_provided() -> (
+    None
+):
+    fake_ha_report = {
+        "verdict": "blocked",
+        "subsystems": {
+            "ha_harness": {
+                "status": "blocked",
+                "code": "HA_HARNESS_BOOT_BLOCKED",
+                "detail": "port 8123 is already allocated",
+            }
+        },
+    }
+
+    with patch(
+        "scripts.final_runtime_validation.ha_smoke", return_value=fake_ha_report
+    ) as mocked_ha_smoke:
+        report = final_runtime_validation(
+            MANIFEST_PATH,
+            addon_config_path=ADDON_CONFIG,
+            ha_harness=REPO_ROOT
+            / "tests"
+            / "harness"
+            / "ha-supervised"
+            / "docker-compose.yml",
+            addon_image="local/homewake-bcresnet",
+        )
+
+    validation = cast(dict[str, Any], report["validation"])
+    ha_harness = cast(dict[str, Any], report["ha_harness"])
+
+    assert mocked_ha_smoke.called
+    assert report["verdict"] == "blocked"
+    assert validation["ha_smoke_verdict"] == "blocked"
+    assert ha_harness["executed"] is True
+    assert ha_harness["status"] == "blocked"
+    assert ha_harness["code"] == "HA_HARNESS_BOOT_BLOCKED"
+    assert "port 8123" in ha_harness["detail"]
+    assert any(
+        "HA_HARNESS_BOOT_BLOCKED" in limitation
+        for limitation in cast(list[str], report["limitations"])
+    )
