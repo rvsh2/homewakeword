@@ -12,7 +12,20 @@ from homewake.audio import (
 )
 from homewake.config import AudioInputConfig, DetectorConfig
 from homewake.detector.base import DetectionDecision, DetectorRuntimeState
-from homewake.registry import ModelManifest
+from homewake.registry import ModelManifest, validate_manifest
+
+
+class BCResNetRuntimeError(RuntimeError):
+    """Raised when the BC-ResNet runtime cannot be initialized."""
+
+
+@dataclass(frozen=True, slots=True)
+class BCResNetRuntimeHandle:
+    """Minimal runtime handle tracking the loaded artifact."""
+
+    framework: str
+    model_path: str
+    artifact_size_bytes: int
 
 
 @dataclass(slots=True)
@@ -40,7 +53,7 @@ class BCResNetStreamingFrontend:
 
 @dataclass(slots=True)
 class BCResNetDetector:
-    """Placeholder BC-ResNet runtime adapter with task-3 frontend state only."""
+    """BC-ResNet runtime adapter with validated manifest-driven loading."""
 
     config: DetectorConfig
     manifest: ModelManifest
@@ -48,6 +61,7 @@ class BCResNetDetector:
     _is_open: bool = False
     _frontend: BCResNetStreamingFrontend = field(init=False)
     _last_features: FrontendFeatures | None = field(default=None, init=False)
+    _runtime: BCResNetRuntimeHandle | None = field(default=None, init=False)
 
     def __post_init__(self) -> None:
         self._frontend = BCResNetStreamingFrontend(
@@ -63,10 +77,38 @@ class BCResNetDetector:
     def last_features(self) -> FrontendFeatures | None:
         return self._last_features
 
+    @property
+    def runtime(self) -> BCResNetRuntimeHandle | None:
+        return self._runtime
+
+    def _open_runtime(self) -> BCResNetRuntimeHandle:
+        validate_manifest(self.manifest, require_artifact=True)
+        if self.manifest.model_path is None:
+            raise BCResNetRuntimeError("detector manifest did not resolve a model artifact")
+        try:
+            artifact_bytes = self.manifest.model_path.read_bytes()
+        except OSError as exc:
+            raise BCResNetRuntimeError(
+                f"failed to read model artifact: {self.manifest.model_path}"
+            ) from exc
+        if not artifact_bytes:
+            raise BCResNetRuntimeError(
+                f"model artifact is empty: {self.manifest.model_path}"
+            )
+        return BCResNetRuntimeHandle(
+            framework=self.manifest.framework,
+            model_path=str(self.manifest.model_path),
+            artifact_size_bytes=len(artifact_bytes),
+        )
+
     def open(self) -> None:
+        if self._is_open:
+            return
+        self._runtime = self._open_runtime()
         self._is_open = True
 
     def close(self) -> None:
+        self._runtime = None
         self._is_open = False
 
     def reset(self) -> None:
