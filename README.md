@@ -35,15 +35,24 @@ It is built around:
 5. Use host `homewakeword` and port `10700`.
 6. Select the wake word in your Assist configuration.
 
-### HACS helper integration
+### Install via HACS
 
 This repository is also HACS-installable as a custom **Integration**.
 
+1. Open **HACS** in Home Assistant.
+2. Add this repository as a custom repository.
+3. Select repository type **Integration**.
+4. Install **HomeWakeWord** from HACS.
+5. Restart Home Assistant.
+6. Add the **HomeWakeWord** integration.
+
+Important:
+
 - HACS installs only the lightweight **HomeWakeWord** helper integration under `custom_components/`.
 - HACS does **not** install, start, or manage the HomeWakeWord add-on runtime.
-- After installing via HACS, add the **HomeWakeWord** integration for onboarding guidance, then use the built-in **Wyoming** integration against host `homewakeword` and port `10700`.
-
-The actual wake-word runtime distribution model stays the same: HomeWakeWord runs as the existing Home Assistant add-on and exposes Wyoming on port `10700`.
+- After installing via HACS, use the helper integration only for onboarding guidance.
+- The actual runtime still runs through the **HomeWakeWord add-on** plus the built-in **Wyoming** integration.
+- Wyoming should connect to host `homewakeword` and port `10700`.
 
 ## Default add-on settings
 
