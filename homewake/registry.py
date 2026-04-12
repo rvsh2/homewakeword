@@ -65,10 +65,14 @@ def _as_mapping(data: Any, *, context: str) -> dict[str, Any]:
     return data
 
 
-def _require_string(data: dict[str, Any], key: str, *, default: str | None = None) -> str:
+def _require_string(
+    data: dict[str, Any], key: str, *, default: str | None = None
+) -> str:
     value = data.get(key, default)
     if value is None or not isinstance(value, str) or not value.strip():
-        raise ManifestValidationError(f"manifest field '{key}' must be a non-empty string")
+        raise ManifestValidationError(
+            f"manifest field '{key}' must be a non-empty string"
+        )
     return value.strip()
 
 
@@ -89,14 +93,18 @@ def _resolve_model_path(raw_path: str | None, manifest_path: Path) -> Path | Non
     if raw_path is None:
         return None
     if not isinstance(raw_path, str) or not raw_path.strip():
-        raise ManifestValidationError("manifest field 'model_path' must be a non-empty string when provided")
+        raise ManifestValidationError(
+            "manifest field 'model_path' must be a non-empty string when provided"
+        )
     model_path = Path(raw_path)
     if not model_path.is_absolute():
         model_path = (manifest_path.parent / model_path).resolve()
     return model_path
 
 
-def validate_manifest(manifest: ModelManifest, *, require_artifact: bool = True) -> ModelManifest:
+def validate_manifest(
+    manifest: ModelManifest, *, require_artifact: bool = True
+) -> ModelManifest:
     if manifest.backend != SUPPORTED_BACKEND:
         raise ManifestValidationError(
             f"unsupported detector backend: expected '{SUPPORTED_BACKEND}', got '{manifest.backend}'"
@@ -114,7 +122,9 @@ def validate_manifest(manifest: ModelManifest, *, require_artifact: bool = True)
                 f"framework '{manifest.framework}' expects artifact suffix '{suffix}', got '{manifest.model_path.suffix or '<none>'}'"
             )
         if require_artifact and not manifest.model_path.exists():
-            raise ManifestValidationError(f"model artifact does not exist: {manifest.model_path}")
+            raise ManifestValidationError(
+                f"model artifact does not exist: {manifest.model_path}"
+            )
     return manifest
 
 
@@ -123,6 +133,11 @@ class ModelRegistry:
     """Container for resolved model manifests."""
 
     default_model: ModelManifest
+
+    def list_wake_words(self) -> tuple[str, ...]:
+        """Return wake words from the manifest-backed registry source of truth."""
+
+        return (self.default_model.wake_word,)
 
     def resolve(self, backend: str, *, framework: str | None = None) -> ModelManifest:
         """Return the manifest for a backend and optional framework."""
@@ -155,7 +170,9 @@ def load_manifest(path: Path, *, require_artifact: bool = True) -> ModelManifest
     audio_data = _as_mapping(root.get("audio"), context="manifest.audio")
     frontend_data = _as_mapping(root.get("frontend"), context="manifest.frontend")
 
-    sample_rate_hz = int(audio_data.get("sample_rate_hz", root.get("sample_rate_hz", 16_000)))
+    sample_rate_hz = int(
+        audio_data.get("sample_rate_hz", root.get("sample_rate_hz", 16_000))
+    )
     audio = AudioInputConfig(
         sample_rate_hz=sample_rate_hz,
         sample_width_bytes=int(audio_data.get("sample_width_bytes", 2)),
@@ -201,4 +218,6 @@ def load_manifest(path: Path, *, require_artifact: bool = True) -> ModelManifest
 def load_registry(path: Path, *, require_artifact: bool = True) -> ModelRegistry:
     """Load the current single-model registry from a manifest file."""
 
-    return ModelRegistry(default_model=load_manifest(path, require_artifact=require_artifact))
+    return ModelRegistry(
+        default_model=load_manifest(path, require_artifact=require_artifact)
+    )
