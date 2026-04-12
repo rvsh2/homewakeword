@@ -22,6 +22,13 @@ class ComponentHealth:
     status: HealthStatus
     detail: str = ""
 
+    def as_dict(self) -> dict[str, str]:
+        return {
+            "name": self.name,
+            "status": self.status.value,
+            "detail": self.detail,
+        }
+
 
 @dataclass(frozen=True, slots=True)
 class RuntimeHealth:
@@ -29,3 +36,9 @@ class RuntimeHealth:
 
     overall: HealthStatus
     components: tuple[ComponentHealth, ...]
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "overall": self.overall.value,
+            "components": [component.as_dict() for component in self.components],
+        }
