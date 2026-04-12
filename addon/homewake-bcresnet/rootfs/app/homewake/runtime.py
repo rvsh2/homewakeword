@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, fields, is_dataclass
 from enum import Enum
+import resource
 from pathlib import Path
 from typing import Any
 
@@ -103,7 +104,61 @@ def build_config_echo(config: HomeWakeConfig) -> dict[str, object]:
     return payload
 
 
-def collect_runtime_diagnostics(service: HomeWakeService) -> dict[str, object]:
+def _read_proc_status_bytes(field_name: str) -> int | None:
+    status_path = Path("/proc/self/status")
+    if not status_path.exists():
+        return None
+    try:
+        lines = status_path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return None
+    prefix = f"{field_name}:"
+    for line in lines:
+        if not line.startswith(prefix):
+            continue
+        parts = line.split()
+        if len(parts) < 2:
+            return None
+        try:
+            return int(parts[1]) * 1024
+        except ValueError:
+            return None
+    return None
+
+
+def collect_process_resources() -> dict[str, object]:
+    """Capture current process resource usage for reliability reporting."""
+
+    usage = resource.getrusage(resource.RUSAGE_SELF)
+    peak_rss_bytes = _read_proc_status_bytes("VmHWM")
+    if peak_rss_bytes is None:
+        peak_rss_bytes = int(usage.ru_maxrss) * 1024
+    rss_bytes = _read_proc_status_bytes("VmRSS")
+    if rss_bytes is None:
+        rss_bytes = peak_rss_bytes
+    return {
+        "rss_bytes": rss_bytes,
+        "peak_rss_bytes": peak_rss_bytes,
+        "user_cpu_seconds": round(usage.ru_utime, 6),
+        "system_cpu_seconds": round(usage.ru_stime, 6),
+    }
+
+
+def _classification_from_overall(overall: str) -> str:
+    if overall == "ready":
+        return "healthy"
+    if overall == "degraded":
+        return "degraded"
+    return "unhealthy"
+
+
+def collect_runtime_diagnostics(
+    service: HomeWakeService,
+    *,
+    startup_duration_ms: float | None = None,
+    notes: list[str] | None = None,
+    startup_error: str | None = None,
+) -> dict[str, object]:
     """Collect structured startup/runtime diagnostics without protocol coupling."""
 
     detector = service.server.runtime.detector
@@ -120,7 +175,14 @@ def collect_runtime_diagnostics(service: HomeWakeService) -> dict[str, object]:
             str(path) for path in service.custom_imports.loaded_manifest_paths
         ],
         "custom_import_rejections": list(service.custom_imports.rejected),
+        "process_resources": collect_process_resources(),
     }
+    if startup_duration_ms is not None:
+        diagnostics["startup_duration_ms"] = round(startup_duration_ms, 3)
+    if notes:
+        diagnostics["notes"] = list(notes)
+    if startup_error is not None:
+        diagnostics["startup_error"] = startup_error
     runtime_handle = getattr(detector, "runtime", None)
     if runtime_handle is not None:
         diagnostics["artifact_size_bytes"] = runtime_handle.artifact_size_bytes
@@ -130,16 +192,64 @@ def collect_runtime_diagnostics(service: HomeWakeService) -> dict[str, object]:
     return diagnostics
 
 
-def build_runtime_report(service: HomeWakeService) -> dict[str, object]:
+def build_runtime_report(
+    service: HomeWakeService,
+    *,
+    startup_duration_ms: float | None = None,
+    notes: list[str] | None = None,
+) -> dict[str, object]:
     """Build a detailed runtime report for self-test and startup diagnostics."""
 
-    return build_runtime_health(
+    payload = build_runtime_health(
         running=service.server.is_running,
         loaded_wake_words=service.registry.list_wake_words(),
         inventory=service.inventory,
         config=service.config_echo,
-        diagnostics=collect_runtime_diagnostics(service),
+        diagnostics=collect_runtime_diagnostics(
+            service,
+            startup_duration_ms=startup_duration_ms,
+            notes=notes,
+        ),
     ).as_dict(include_details=True)
+    payload["classification"] = _classification_from_overall(str(payload["overall"]))
+    return payload
+
+
+def build_startup_failure_report(
+    config: HomeWakeConfig,
+    *,
+    error: BaseException | str,
+    startup_duration_ms: float | None = None,
+    notes: list[str] | None = None,
+) -> dict[str, object]:
+    """Build an explicit unhealthy report when startup or reload fails."""
+
+    diagnostics: dict[str, object] = {
+        "service_uri": f"tcp://{config.server.host}:{config.server.port}",
+        "running": False,
+        "manifest_path": str(resolve_manifest_path(config)),
+        "loaded_model_count": 0,
+        "loaded_wake_words": [],
+        "mode": "startup_failed",
+        "startup_error": str(error),
+        "startup_error_type": (
+            type(error).__name__ if isinstance(error, BaseException) else "RuntimeError"
+        ),
+        "process_resources": collect_process_resources(),
+    }
+    if startup_duration_ms is not None:
+        diagnostics["startup_duration_ms"] = round(startup_duration_ms, 3)
+    if notes:
+        diagnostics["notes"] = list(notes)
+    payload = build_runtime_health(
+        running=False,
+        loaded_wake_words=(),
+        inventory=(),
+        config=build_config_echo(config),
+        diagnostics=diagnostics,
+    ).as_dict(include_details=True)
+    payload["classification"] = _classification_from_overall(str(payload["overall"]))
+    return payload
 
 
 def build_service(config: HomeWakeConfig) -> HomeWakeService:

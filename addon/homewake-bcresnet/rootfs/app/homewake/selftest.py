@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 from pathlib import Path
+import time
 
 from homewake.audio import AudioChunk, floats_to_pcm16le
 from homewake.registry import ModelInventoryRecord
@@ -25,6 +26,8 @@ class SelfTestResult:
     detection_wake_word: str | None
     service_uri: str
     config: dict[str, object]
+    startup_duration_ms: float
+    startup_resources: dict[str, object]
     startup_health: dict[str, object]
     shutdown_health: dict[str, object]
 
@@ -40,6 +43,8 @@ class SelfTestResult:
             "detection_wake_word": self.detection_wake_word,
             "service_uri": self.service_uri,
             "config": self.config,
+            "startup_duration_ms": self.startup_duration_ms,
+            "startup_resources": self.startup_resources,
             "startup_health": self.startup_health,
             "shutdown_health": self.shutdown_health,
         }
@@ -62,9 +67,14 @@ def run_self_test(
 
     server = service.server
     detection_event = None
+    startup_started = time.perf_counter()
     server.start()
+    startup_duration_ms = round((time.perf_counter() - startup_started) * 1000.0, 3)
     try:
-        startup_health = build_runtime_report(service)
+        startup_health = build_runtime_report(
+            service,
+            startup_duration_ms=startup_duration_ms,
+        )
         for _ in range(4):
             detection_event = server.handle_audio_chunk(_loud_chunk(service))
             if detection_event is not None:
@@ -73,6 +83,14 @@ def run_self_test(
         server.stop()
 
     shutdown_health = build_runtime_report(service)
+    startup_diagnostics = startup_health.get("diagnostics")
+    startup_resources = (
+        {}
+        if not isinstance(startup_diagnostics, dict)
+        else startup_diagnostics.get("process_resources", {})
+    )
+    if not isinstance(startup_resources, dict):
+        startup_resources = {}
     result = SelfTestResult(
         status="ok" if detection_event is not None else "failed",
         health_status=str(startup_health["overall"]),
@@ -88,6 +106,8 @@ def run_self_test(
         else detection_event.wake_word,
         service_uri=server.uri,
         config=service.config_echo,
+        startup_duration_ms=startup_duration_ms,
+        startup_resources=startup_resources,
         startup_health=startup_health,
         shutdown_health=shutdown_health,
     )
