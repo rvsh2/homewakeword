@@ -12,5 +12,8 @@ dependencies = [
   "PyYAML>=6",
 ]
 
+[tool.setuptools]
+packages = ["homewake"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
