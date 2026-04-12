@@ -8,6 +8,27 @@
       "user": {
         "title": "Finish HomeWakeWord setup",
         "description": "HomeWakeWord installed from HACS is only a helper integration.\n\n1. Install and start the HomeWakeWord add-on separately.\n2. Add Home Assistant's built-in Wyoming integration.\n3. Connect it to host `{wyoming_host}` and port `{wyoming_port}`.\n\nThis integration does not install, manage, or proxy the add-on runtime."
+      },
+      "init": {
+        "title": "HomeWakeWord options",
+        "description": "Update the add-on name shown in onboarding help and the Wyoming host/port shown to the user."
+      }
+    },
+    "error": {},
+    "abort": {
+      "single_instance_allowed": "HomeWakeWord is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "HomeWakeWord options",
+        "description": "Update the add-on name shown in onboarding help and the Wyoming host/port shown to the user.",
+        "data": {
+          "addon_name": "Add-on name",
+          "wyoming_host": "Wyoming host",
+          "wyoming_port": "Wyoming port"
+        }
       }
     }
   }

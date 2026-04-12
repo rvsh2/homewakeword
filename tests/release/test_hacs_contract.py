@@ -25,6 +25,8 @@ def test_helper_integration_scaffold_exists_for_hacs_install() -> None:
         INTEGRATION_ROOT / "config_flow.py",
         INTEGRATION_ROOT / "strings.json",
         INTEGRATION_ROOT / "translations" / "en.json",
+        INTEGRATION_ROOT / "brand" / "icon.png",
+        INTEGRATION_ROOT / "brand" / "logo.png",
     ]
 
     for path in expected_paths:
@@ -56,6 +58,17 @@ def test_helper_integration_copy_keeps_addon_and_wyoming_flow_explicit() -> None
     assert "built-in Wyoming integration" in description
     assert "host `{wyoming_host}` and port `{wyoming_port}`" in description
     assert "does not install, manage, or proxy the add-on runtime" in description
+
+
+def test_helper_integration_strings_expose_options_labels() -> None:
+    strings = json.loads(
+        (INTEGRATION_ROOT / "strings.json").read_text(encoding="utf-8")
+    )
+    options = strings["options"]["step"]["init"]
+
+    assert options["data"]["addon_name"] == "Add-on name"
+    assert options["data"]["wyoming_host"] == "Wyoming host"
+    assert options["data"]["wyoming_port"] == "Wyoming port"
 
 
 def test_validate_repo_requires_hacs_surface_paths() -> None:
