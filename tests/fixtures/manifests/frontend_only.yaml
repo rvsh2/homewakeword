@@ -1,4 +1,6 @@
+model_id: frontend_only
 wake_word: frontend_only
+version: 0.0.0
 audio:
   sample_rate_hz: 16000
   sample_width_bytes: 2

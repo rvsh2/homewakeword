@@ -5,40 +5,9 @@ import json
 from pathlib import Path
 import sys
 
-import yaml
-
 from homewake.audio import AudioFormatError, iter_wave_chunks
-from homewake.config import AudioInputConfig, DetectorConfig, LogMelFrontendConfig
 from homewake.detector.bcresnet import BCResNetStreamingFrontend
-
-
-def _load_manifest(path: Path) -> tuple[AudioInputConfig, DetectorConfig, str]:
-    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    audio_data = data.get("audio", {})
-    frontend_data = data.get("frontend", {})
-    wake_word = data.get("wake_word", "frontend_only")
-
-    audio_config = AudioInputConfig(
-        sample_rate_hz=int(audio_data.get("sample_rate_hz", 16_000)),
-        sample_width_bytes=int(audio_data.get("sample_width_bytes", 2)),
-        channels=int(audio_data.get("channels", 1)),
-        frame_samples=int(audio_data.get("frame_samples", 1_280)),
-        window_seconds=float(audio_data.get("window_seconds", 1.0)),
-    )
-    detector_config = DetectorConfig(
-        threshold=float(data.get("threshold", 1.0)),
-        frontend=LogMelFrontendConfig(
-            n_fft=int(frontend_data.get("n_fft", 512)),
-            win_length=int(frontend_data.get("win_length", 480)),
-            hop_length=int(frontend_data.get("hop_length", 160)),
-            n_mels=int(frontend_data.get("n_mels", 40)),
-            f_min_hz=float(frontend_data.get("f_min_hz", 20.0)),
-            f_max_hz=float(frontend_data.get("f_max_hz", 7_600.0)),
-            log_floor=float(frontend_data.get("log_floor", 1e-6)),
-            context_seconds=float(frontend_data.get("context_seconds", 1.0)),
-        ),
-    )
-    return audio_config, detector_config, wake_word
+from homewake.registry import ManifestValidationError, load_manifest
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -52,14 +21,18 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    audio_config, detector_config, wake_word = _load_manifest(args.manifest)
+    try:
+        manifest = load_manifest(args.manifest, require_artifact=False)
+    except ManifestValidationError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
     frontend = BCResNetStreamingFrontend(
-        audio_config=audio_config,
-        detector_config=detector_config,
+        audio_config=manifest.audio,
+        detector_config=manifest.detector_config(),
     )
 
     try:
-        chunks = iter_wave_chunks(args.input, audio_config)
+        chunks = iter_wave_chunks(args.input, manifest.audio)
         diagnostics = [frontend.process_chunk(chunk) for chunk in chunks]
     except AudioFormatError as exc:
         print(str(exc), file=sys.stderr)
@@ -71,7 +44,7 @@ def main(argv: list[str] | None = None) -> int:
         "manifest": str(args.manifest),
         "input": str(args.input),
         "expected": args.expect,
-        "wake_word": wake_word,
+        "wake_word": manifest.wake_word,
         "detection": "none",
         "chunk_count": len(diagnostics),
         "final_chunk_index": final.chunk_index,
@@ -86,9 +59,9 @@ def main(argv: list[str] | None = None) -> int:
     args.json_out.parent.mkdir(parents=True, exist_ok=True)
     args.json_out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
-    if args.expect not in {"none", wake_word}:
+    if args.expect not in {"none", manifest.wake_word}:
         print(
-            f"expected must be 'none' or manifest wake word '{wake_word}', got '{args.expect}'",
+            f"expected must be 'none' or manifest wake word '{manifest.wake_word}', got '{args.expect}'",
             file=sys.stderr,
         )
         return 1
