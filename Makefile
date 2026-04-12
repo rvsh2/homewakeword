@@ -1,7 +1,8 @@
-.PHONY: verify test verify-addon addon-image addon-self-test addon-builder-test verify-task14 verify-e2e release-dry-run final-gates-help
+.PHONY: verify test verify-addon addon-image addon-self-test addon-builder-test verify-task12 verify-task14 verify-e2e release-dry-run final-gates-help
 
 verify:
 	python -m pytest -q
+	$(MAKE) verify-task12
 	python -m scripts.validate_repo
 	python -m scripts.validate_addon_config --config addon/homewake-bcresnet/config.yaml --options tests/fixtures/addon/options.valid.json
 	$(MAKE) verify-task14
@@ -20,6 +21,10 @@ addon-self-test: addon-image
 
 addon-builder-test:
 	docker run --rm --privileged -v "/opt/homewake/addon/homewake-bcresnet:/data" -v /var/run/docker.sock:/var/run/docker.sock:ro ghcr.io/home-assistant/amd64-builder:latest --target /data --amd64 --test --image local/homewake-bcresnet-{arch} --docker-hub local
+
+verify-task12:
+	python -m pytest tests/integration/test_restart_reload.py -q
+	python -m scripts.soak_test --manifest models/manifest.yaml --input-dir tests/fixtures/soak --hours 6 --report .sisyphus/evidence/task-12-soak.json
 
 verify-task14:
 	python -m pytest tests/docs tests/release -q
