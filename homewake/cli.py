@@ -4,38 +4,134 @@ from __future__ import annotations
 
 import argparse
 from collections.abc import Sequence
+from dataclasses import dataclass
+from pathlib import Path
+import sys
+from typing import cast
 
-from homewake.config import HomeWakeConfig
+from homewake.config import DetectorConfig, HomeWakeConfig, WyomingServerConfig
+from homewake.detector.bcresnet import BCResNetRuntimeError
+from homewake.registry import ManifestValidationError
+from homewake.runtime import build_service
+from homewake.selftest import run_self_test
+
+
+@dataclass(frozen=True, slots=True)
+class ServeArgs:
+    host: str
+    port: int
+    detector_backend: str
+    manifest: Path | None
+    self_test: bool
+    report: Path | None
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the minimal CLI parser for architecture verification."""
+    """Build the HomeWake CLI parser."""
 
     parser = argparse.ArgumentParser(
         prog="python -m homewake.cli",
-        description="HomeWake runtime shell with frozen architecture contracts.",
+        description="HomeWake Wyoming-facing runtime shell.",
     )
-    parser.add_argument(
+    subparsers = parser.add_subparsers(dest="command")
+
+    serve = subparsers.add_parser("serve", help="Start the Wyoming service")
+    _ = serve.add_argument(
         "--host", default=HomeWakeConfig().server.host, help="Wyoming bind host"
     )
-    parser.add_argument(
+    _ = serve.add_argument(
         "--port",
         type=int,
         default=HomeWakeConfig().server.port,
         help="Wyoming bind port",
     )
-    parser.add_argument(
+    _ = serve.add_argument(
         "--detector-backend",
         default=HomeWakeConfig().detector.backend,
         help="Detector backend identifier",
     )
+    _ = serve.add_argument(
+        "--manifest",
+        type=Path,
+        default=HomeWakeConfig().detector.manifest_path,
+        help="Path to the manifest/registry file",
+    )
+    _ = serve.add_argument(
+        "--self-test",
+        action="store_true",
+        help="Run a non-interactive startup and detection self-test",
+    )
+    _ = serve.add_argument(
+        "--report",
+        type=Path,
+        default=None,
+        help="Write the self-test report JSON to this path",
+    )
     return parser
 
 
-def main(argv: Sequence[str] | None = None) -> int:
-    """Parse CLI arguments without starting runtime behavior yet."""
+def _parse_serve_args(namespace: argparse.Namespace) -> ServeArgs:
+    return ServeArgs(
+        host=cast(str, namespace.host),
+        port=cast(int, namespace.port),
+        detector_backend=cast(str, namespace.detector_backend),
+        manifest=cast(Path | None, namespace.manifest),
+        self_test=cast(bool, namespace.self_test),
+        report=cast(Path | None, namespace.report),
+    )
 
-    build_parser().parse_args(argv)
+
+def _build_config(args: ServeArgs) -> HomeWakeConfig:
+    return HomeWakeConfig(
+        detector=DetectorConfig(
+            backend=args.detector_backend,
+            manifest_path=args.manifest,
+        ),
+        server=WyomingServerConfig(host=args.host, port=args.port),
+    )
+
+
+def _serve(args: argparse.Namespace) -> int:
+    try:
+        serve_args = _parse_serve_args(args)
+        service = build_service(_build_config(serve_args))
+        if serve_args.self_test:
+            result = run_self_test(service, report_path=serve_args.report)
+            print(
+                f"self-test passed: wake_words={','.join(result.loaded_wake_words)} health={result.health_status} uri={result.service_uri}"
+            )
+            return 0
+
+        server = service.server
+        server.start()
+        try:
+            description = server.describe()
+            print(
+                f"ready: uri={description.uri} wake_words={','.join(wake_word.name for wake_word in description.wake_words)}"
+            )
+        finally:
+            server.stop()
+    except (
+        ManifestValidationError,
+        BCResNetRuntimeError,
+        LookupError,
+        RuntimeError,
+        OSError,
+    ) as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    return 0
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Run the requested HomeWake CLI command."""
+
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    command = cast(str | None, args.command)
+    if command == "serve":
+        return _serve(args)
+    parser.print_help()
     return 0
 
 
