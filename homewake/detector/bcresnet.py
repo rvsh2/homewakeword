@@ -13,7 +13,10 @@ from homewake.audio import (
 )
 from homewake.config import AudioInputConfig, DetectorConfig
 from homewake.detector.base import DetectionDecision
-from homewake.detector.streaming import DetectorLoopCounters, StreamingDetectionStateMachine
+from homewake.detector.streaming import (
+    DetectorLoopCounters,
+    StreamingDetectionStateMachine,
+)
 from homewake.registry import ManifestValidationError, ModelManifest, validate_manifest
 
 
@@ -79,7 +82,7 @@ class BCResNetDetector:
 
     @property
     def backend_name(self) -> str:
-        return 'bcresnet'
+        return "bcresnet"
 
     @property
     def last_features(self) -> FrontendFeatures | None:
@@ -96,16 +99,18 @@ class BCResNetDetector:
     def _open_runtime(self) -> BCResNetRuntimeHandle:
         validate_manifest(self.manifest, require_artifact=True)
         if self.manifest.model_path is None:
-            raise BCResNetRuntimeError('detector manifest did not resolve a model artifact')
+            raise BCResNetRuntimeError(
+                "detector manifest did not resolve a model artifact"
+            )
         try:
             artifact_bytes = self.manifest.model_path.read_bytes()
         except OSError as exc:
             raise BCResNetRuntimeError(
-                f'failed to read model artifact: {self.manifest.model_path}'
+                f"failed to read model artifact: {self.manifest.model_path}"
             ) from exc
         if not artifact_bytes:
             raise BCResNetRuntimeError(
-                f'model artifact is empty: {self.manifest.model_path}'
+                f"model artifact is empty: {self.manifest.model_path}"
             )
         return BCResNetRuntimeHandle(
             framework=self.manifest.framework,
@@ -116,7 +121,7 @@ class BCResNetDetector:
     def _score_features(self, features: FrontendFeatures) -> float:
         if self._runtime is None:
             self._loop.record_runtime_failure()
-            raise BCResNetRuntimeError('detector runtime is not open')
+            raise BCResNetRuntimeError("detector runtime is not open")
         artifact_gain = 1.0 + ((self._runtime.artifact_size_bytes % 11) / 100.0)
         hash_bias = (int(features.feature_hash[:8], 16) % 5) / 100.0
         energy = (features.chunk_rms * 0.75) + (features.chunk_peak_abs * 0.25)
@@ -125,6 +130,7 @@ class BCResNetDetector:
     def open(self) -> None:
         if self._is_open:
             return
+        self.reset()
         try:
             self._runtime = self._open_runtime()
         except (BCResNetRuntimeError, ManifestValidationError):
@@ -146,7 +152,7 @@ class BCResNetDetector:
 
         if not self._is_open or self._runtime is None:
             self._loop.record_runtime_failure()
-            raise BCResNetRuntimeError('detector runtime is not open')
+            raise BCResNetRuntimeError("detector runtime is not open")
         try:
             self._last_features = self._frontend.process_chunk(chunk)
         except AudioFormatError:
