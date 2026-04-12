@@ -10,9 +10,13 @@ from typing import Literal, TypedDict, cast
 
 from homewake.audio import AudioFormatError, iter_wave_chunks
 from homewake.config import HomeWakeConfig
-from homewake.detector.bcresnet import BCResNetDetector, BCResNetRuntimeError, BCResNetStreamingFrontend
+from homewake.detector.bcresnet import (
+    BCResNetDetector,
+    BCResNetRuntimeError,
+    BCResNetStreamingFrontend,
+)
 from homewake.events import DetectionEventType
-from homewake.registry import ManifestValidationError, ModelManifest, load_manifest
+from homewake.registry import ManifestValidationError, ModelManifest, load_registry
 from homewake.server.wyoming import WyomingRuntime
 
 
@@ -22,6 +26,7 @@ class ReplayArgs:
     input: Path
     expect: str
     json_out: Path
+    wake_word: str | None
 
 
 class DetectionEventRecord(TypedDict):
@@ -86,6 +91,11 @@ def build_parser() -> argparse.ArgumentParser:
     _ = parser.add_argument('--input', type=Path, required=True)
     _ = parser.add_argument('--expect', required=True)
     _ = parser.add_argument('--json-out', type=Path, required=True)
+    _ = parser.add_argument(
+        '--wake-word',
+        default=None,
+        help='Resolve a specific wake word from a registry pack manifest',
+    )
     return parser
 
 
@@ -96,10 +106,21 @@ def _parse_args(argv: list[str] | None = None) -> ReplayArgs:
         input=cast(Path, namespace.input),
         expect=cast(str, namespace.expect),
         json_out=cast(Path, namespace.json_out),
+        wake_word=cast(str | None, namespace.wake_word),
     )
 
 
-def _frontend_payload(manifest: ModelManifest, args: ReplayArgs) -> tuple[int, FrontendReplayPayload | None]:
+def _resolve_manifest(args: ReplayArgs) -> ModelManifest:
+    registry = load_registry(args.manifest, require_artifact=False)
+    if args.wake_word is None:
+        return registry.default_model
+    return registry.resolve('bcresnet', wake_word=args.wake_word)
+
+
+def _frontend_payload(
+    manifest: ModelManifest,
+    args: ReplayArgs,
+) -> tuple[int, FrontendReplayPayload | None]:
     frontend = BCResNetStreamingFrontend(
         audio_config=manifest.audio,
         detector_config=manifest.detector_config(),
@@ -131,7 +152,10 @@ def _frontend_payload(manifest: ModelManifest, args: ReplayArgs) -> tuple[int, F
     }
 
 
-def _detector_payload(manifest: ModelManifest, args: ReplayArgs) -> tuple[int, DetectorReplayPayload | None]:
+def _detector_payload(
+    manifest: ModelManifest,
+    args: ReplayArgs,
+) -> tuple[int, DetectorReplayPayload | None]:
     detector = BCResNetDetector(
         config=manifest.detector_config(),
         manifest=manifest,
@@ -195,8 +219,8 @@ def _detector_payload(manifest: ModelManifest, args: ReplayArgs) -> tuple[int, D
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
     try:
-        manifest = load_manifest(args.manifest, require_artifact=False)
-    except ManifestValidationError as exc:
+        manifest = _resolve_manifest(args)
+    except (ManifestValidationError, LookupError) as exc:
         print(str(exc), file=sys.stderr)
         return 1
 
@@ -232,7 +256,10 @@ def main(argv: list[str] | None = None) -> int:
         payload = detector_payload
 
     args.json_out.parent.mkdir(parents=True, exist_ok=True)
-    args.json_out.write_text(json.dumps(payload, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+    args.json_out.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + '\n',
+        encoding='utf-8',
+    )
     return 0
 
 
