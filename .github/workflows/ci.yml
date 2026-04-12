@@ -25,6 +25,8 @@ jobs:
       - run: python -m scripts.review_code_quality --help
       - run: python -m scripts.final_runtime_validation --help
       - run: python -m scripts.check_scope_fidelity --help
+      - run: python -m pytest tests/e2e -q
       - run: docker build -f addon/homewake-bcresnet/Dockerfile -t local/homewake-bcresnet .
       - run: docker run --rm local/homewake-bcresnet --self-test --report /tmp/self-test.json
+      - run: python -m scripts.ha_smoke --harness tests/harness/ha-supervised/docker-compose.yml --addon-slug homewake-bcresnet --addon-image local/homewake-bcresnet --wyoming-port 10400 --report .sisyphus/evidence/ha-smoke.json
       - run: docker run --rm --privileged -v "${{ github.workspace }}/addon/homewake-bcresnet:/data" -v /var/run/docker.sock:/var/run/docker.sock:ro ghcr.io/home-assistant/amd64-builder:latest --target /data --amd64 --test --image local/homewake-bcresnet-{arch} --docker-hub local

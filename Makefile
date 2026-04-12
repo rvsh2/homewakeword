@@ -1,4 +1,4 @@
-.PHONY: verify test verify-addon addon-image addon-self-test addon-builder-test verify-task14 release-dry-run final-gates-help
+.PHONY: verify test verify-addon addon-image addon-self-test addon-builder-test verify-task14 verify-e2e release-dry-run final-gates-help
 
 verify:
 	python -m pytest -q
@@ -25,6 +25,10 @@ verify-task14:
 	python -m pytest tests/docs tests/release -q
 	python -m scripts.release_dry_run
 	$(MAKE) final-gates-help
+
+verify-e2e:
+	python -m pytest tests/e2e -q
+	python -m scripts.ha_smoke --harness tests/harness/ha-supervised/docker-compose.yml --addon-slug homewake-bcresnet --addon-image local/homewake-bcresnet --wyoming-port 10400 --report .sisyphus/evidence/ha-smoke.json
 
 release-dry-run:
 	python -m scripts.release_dry_run
