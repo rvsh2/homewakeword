@@ -1,0 +1,29 @@
+model_id: unapproved_fixture
+wake_word: hey_unapproved
+version: 1.2.3
+backend: bcresnet
+framework: tflite
+model_path: fixture_model.tflite
+threshold: 0.42
+provenance:
+  source: fixture://tests/fixture_model.tflite
+  training_recipe: fixture-bcresnet
+  training_recipe_version: 1.2.3
+  artifact_sha256: b96fed2b844b770ae57ffdef4bc264dea5eb77ce9dd96bcbaf163cf72cbe4282
+  license: CC-BY-4.0
+  provenance_status: unapproved
+audio:
+  sample_rate_hz: 16000
+  sample_width_bytes: 2
+  channels: 1
+  frame_samples: 1280
+  window_seconds: 1.0
+frontend:
+  n_fft: 512
+  win_length: 480
+  hop_length: 160
+  n_mels: 40
+  f_min_hz: 20.0
+  f_max_hz: 7600.0
+  log_floor: 1.0e-6
+  context_seconds: 1.0
