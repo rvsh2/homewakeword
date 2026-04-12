@@ -33,7 +33,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--addon-config", type=Path, default=DEFAULT_ADDON_CONFIG)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--image-tag", default="local/homewakeword-bcresnet")
+    parser.add_argument("--image-tag", default="local/homewakeword")
     return parser
 
 

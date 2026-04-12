@@ -18,7 +18,7 @@ def test_release_dry_run_reports_non_destructive_publish_plan(tmp_path: Path) ->
         MANIFEST_PATH,
         ADDON_CONFIG,
         output_path,
-        image_tag="local/homewakeword-bcresnet:test",
+        image_tag="local/homewakeword:test",
     )
 
     payload = json.loads(output_path.read_text(encoding="utf-8"))
