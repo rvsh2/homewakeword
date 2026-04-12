@@ -1,0 +1,92 @@
+default_model: okay_nabu
+models:
+  - model_id: okay_nabu_fixture_v1
+    wake_word: okay_nabu
+    version: 1.0.0
+    backend: bcresnet
+    framework: tflite
+    model_path: fixture_model.tflite
+    threshold: 0.55
+    provenance:
+      source: fixture://tests/v1/okay_nabu.tflite
+      training_recipe: fixture-v1-pack
+      training_recipe_version: 1.0.0
+      artifact_sha256: b96fed2b844b770ae57ffdef4bc264dea5eb77ce9dd96bcbaf163cf72cbe4282
+      license: CC-BY-4.0
+      provenance_status: approved
+    evaluation:
+      status: validated
+      positive_fixture: ../stream/okay_nabu_positive.wav
+      negative_fixture: ../stream/okay_nabu_negative.wav
+  - model_id: hey_jarvis_fixture_v1
+    wake_word: hey_jarvis
+    version: 1.0.0
+    backend: bcresnet
+    framework: tflite
+    model_path: fixture_model.tflite
+    threshold: 0.55
+    provenance:
+      source: fixture://tests/v1/hey_jarvis.tflite
+      training_recipe: fixture-v1-pack
+      training_recipe_version: 1.0.0
+      artifact_sha256: b96fed2b844b770ae57ffdef4bc264dea5eb77ce9dd96bcbaf163cf72cbe4282
+      license: CC-BY-4.0
+      provenance_status: approved
+    evaluation:
+      status: validated
+      positive_fixture: ../stream/hey_jarvis_positive.wav
+      negative_fixture: ../stream/hey_jarvis_negative.wav
+  - model_id: alexa_fixture_v1
+    wake_word: alexa
+    version: 1.0.0
+    backend: bcresnet
+    framework: tflite
+    model_path: fixture_model.tflite
+    threshold: 0.55
+    provenance:
+      source: fixture://tests/v1/alexa.tflite
+      training_recipe: fixture-v1-pack
+      training_recipe_version: 1.0.0
+      artifact_sha256: b96fed2b844b770ae57ffdef4bc264dea5eb77ce9dd96bcbaf163cf72cbe4282
+      license: CC-BY-4.0
+      provenance_status: approved
+    evaluation:
+      status: pending
+      positive_fixture: ../stream/alexa_positive.wav
+      negative_fixture: ../stream/alexa_negative.wav
+  - model_id: hey_mycroft_fixture_v1
+    wake_word: hey_mycroft
+    version: 1.0.0
+    backend: bcresnet
+    framework: tflite
+    model_path: fixture_model.tflite
+    threshold: 0.55
+    provenance:
+      source: fixture://tests/v1/hey_mycroft.tflite
+      training_recipe: fixture-v1-pack
+      training_recipe_version: 1.0.0
+      artifact_sha256: b96fed2b844b770ae57ffdef4bc264dea5eb77ce9dd96bcbaf163cf72cbe4282
+      license: CC-BY-4.0
+      provenance_status: approved
+    evaluation:
+      status: validated
+      positive_fixture: ../stream/hey_mycroft_positive.wav
+      negative_fixture: ../stream/hey_mycroft_negative.wav
+  - model_id: hey_rhasspy_fixture_v1
+    wake_word: hey_rhasspy
+    version: 1.0.0
+    backend: bcresnet
+    framework: tflite
+    model_path: fixture_model.tflite
+    threshold: 0.55
+    provenance:
+      source: fixture://tests/v1/hey_rhasspy.tflite
+      training_recipe: fixture-v1-pack
+      training_recipe_version: 1.0.0
+      artifact_sha256: b96fed2b844b770ae57ffdef4bc264dea5eb77ce9dd96bcbaf163cf72cbe4282
+      license: CC-BY-4.0
+      provenance_status: approved
+    evaluation:
+      status: validated
+      positive_fixture: ../stream/hey_rhasspy_positive.wav
+      negative_fixture: ../stream/hey_rhasspy_negative.wav
