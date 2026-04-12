@@ -1,10 +1,17 @@
 services:
   homewakeword:
-    image: local/homewakeword-bcresnet
     container_name: homewakeword-bcresnet
+    image: local/homewakeword-bcresnet
+    restart: unless-stopped
     ports:
-      - "10700:10700"
+      - "0.0.0.0:10700:10700"
+    networks:
+      - bridge-network
     volumes:
-      - ./data:/data
-      - ./share:/share
+      - /opt/homewake/data:/data
+      - /opt/homewake/share:/share
     command: ["serve"]
+
+networks:
+  bridge-network:
+    external: true
