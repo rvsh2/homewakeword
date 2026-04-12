@@ -42,7 +42,9 @@ def _load_yaml(path: Path) -> dict[str, Any]:
     try:
         raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     except yaml.YAMLError as exc:
-        raise AddonConfigValidationError(f"malformed add-on config YAML: {exc}") from exc
+        raise AddonConfigValidationError(
+            f"malformed add-on config YAML: {exc}"
+        ) from exc
     if not isinstance(raw, dict):
         raise AddonConfigValidationError("add-on config root must be a mapping")
     return raw
@@ -52,7 +54,9 @@ def _load_json(path: Path) -> dict[str, Any]:
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        raise AddonConfigValidationError(f"malformed add-on options JSON: {exc}") from exc
+        raise AddonConfigValidationError(
+            f"malformed add-on options JSON: {exc}"
+        ) from exc
     if not isinstance(raw, dict):
         raise AddonConfigValidationError("add-on options must decode to an object")
     return raw
@@ -61,7 +65,9 @@ def _load_json(path: Path) -> dict[str, Any]:
 def _require_keys(config: dict[str, Any]) -> None:
     for key in _REQUIRED_TOP_LEVEL_KEYS:
         if key not in config:
-            raise AddonConfigValidationError(f"add-on config missing required key: {key}")
+            raise AddonConfigValidationError(
+                f"add-on config missing required key: {key}"
+            )
 
 
 def _validate_schema_shape(config: dict[str, Any]) -> None:
@@ -75,20 +81,24 @@ def _validate_schema_shape(config: dict[str, Any]) -> None:
     if not isinstance(ports, dict):
         raise AddonConfigValidationError("config.ports must be a mapping")
     if set(schema) != set(options):
-        raise AddonConfigValidationError("config.options and config.schema must define the same option keys")
+        raise AddonConfigValidationError(
+            "config.options and config.schema must define the same option keys"
+        )
     if "10700/tcp" not in ports:
         raise AddonConfigValidationError("config.ports must expose '10700/tcp'")
 
 
 def _validate_metadata(config: dict[str, Any]) -> None:
-    if config.get("slug") != "homewakeword-bcresnet":
-        raise AddonConfigValidationError("config.slug must be 'homewakeword-bcresnet'")
+    if config.get("slug") != "homewakeword":
+        raise AddonConfigValidationError("config.slug must be 'homewakeword'")
     if config.get("startup") != "services":
         raise AddonConfigValidationError("config.startup must be 'services'")
     if config.get("boot") != "auto":
         raise AddonConfigValidationError("config.boot must be 'auto'")
     if config.get("init") is not False:
-        raise AddonConfigValidationError("config.init must be false so run.sh owns lifecycle")
+        raise AddonConfigValidationError(
+            "config.init must be false so run.sh owns lifecycle"
+        )
     arch = config.get("arch")
     if not isinstance(arch, list) or not arch:
         raise AddonConfigValidationError("config.arch must be a non-empty list")
@@ -96,9 +106,13 @@ def _validate_metadata(config: dict[str, Any]) -> None:
 
 def _require_absolute_path(value: object, *, option_name: str) -> str:
     if not isinstance(value, str) or not value.strip():
-        raise AddonConfigValidationError(f"option '{option_name}' must be a non-empty string")
+        raise AddonConfigValidationError(
+            f"option '{option_name}' must be a non-empty string"
+        )
     if not value.startswith("/"):
-        raise AddonConfigValidationError(f"option '{option_name}' must be an absolute path")
+        raise AddonConfigValidationError(
+            f"option '{option_name}' must be an absolute path"
+        )
     return value
 
 
@@ -120,7 +134,9 @@ def _validate_against_schema(config: dict[str, Any], options: dict[str, Any]) ->
             details.append(f"missing keys: {', '.join(missing)}")
         if extra:
             details.append(f"extra keys: {', '.join(extra)}")
-        raise AddonConfigValidationError("add-on options do not match schema: " + "; ".join(details))
+        raise AddonConfigValidationError(
+            "add-on options do not match schema: " + "; ".join(details)
+        )
 
     host = options["host"]
     if not isinstance(host, str) or not host.strip():
@@ -128,17 +144,22 @@ def _validate_against_schema(config: dict[str, Any], options: dict[str, Any]) ->
 
     port = options["port"]
     if not isinstance(port, int) or isinstance(port, bool) or not (1 <= port <= 65535):
-        raise AddonConfigValidationError("option 'port' must be an integer between 1 and 65535")
+        raise AddonConfigValidationError(
+            "option 'port' must be an integer between 1 and 65535"
+        )
 
     detector_backend = options["detector_backend"]
     if detector_backend not in _SUPPORTED_BACKENDS:
         raise AddonConfigValidationError(
-            "option 'detector_backend' must be one of: " + ", ".join(sorted(_SUPPORTED_BACKENDS))
+            "option 'detector_backend' must be one of: "
+            + ", ".join(sorted(_SUPPORTED_BACKENDS))
         )
 
     _ = _require_absolute_path(options["manifest"], option_name="manifest")
     _ = _require_bool(options["custom_models"], option_name="custom_models")
-    _ = _require_absolute_path(options["custom_model_dir"], option_name="custom_model_dir")
+    _ = _require_absolute_path(
+        options["custom_model_dir"], option_name="custom_model_dir"
+    )
     _ = _require_bool(options["openwakeword_compat"], option_name="openwakeword_compat")
     _ = _require_absolute_path(
         options["openwakeword_model_dir"],
@@ -148,7 +169,8 @@ def _validate_against_schema(config: dict[str, Any], options: dict[str, Any]) ->
     log_level = options["log_level"]
     if log_level not in _ALLOWED_LOG_LEVELS:
         raise AddonConfigValidationError(
-            "option 'log_level' must be one of: " + ", ".join(sorted(_ALLOWED_LOG_LEVELS))
+            "option 'log_level' must be one of: "
+            + ", ".join(sorted(_ALLOWED_LOG_LEVELS))
         )
 
 

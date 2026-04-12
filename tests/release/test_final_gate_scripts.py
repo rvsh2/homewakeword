@@ -45,7 +45,7 @@ def test_final_runtime_validation_runs_local_repo_checks_without_harness() -> No
         MANIFEST_PATH,
         addon_config_path=ADDON_CONFIG,
         ha_harness=None,
-        addon_image="local/homewakeword-bcresnet",
+        addon_image="local/homewakeword",
     )
     validation = cast(dict[str, Any], report["validation"])
 
@@ -82,7 +82,7 @@ def test_final_runtime_validation_integrates_ha_smoke_when_harness_is_provided()
             / "harness"
             / "ha-supervised"
             / "docker-compose.yml",
-            addon_image="local/homewakeword-bcresnet",
+            addon_image="local/homewakeword",
         )
 
     validation = cast(dict[str, Any], report["validation"])

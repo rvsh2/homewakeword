@@ -6,6 +6,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
+import yaml
+
 from homewakeword.config import (
     CustomModelImportConfig,
     DetectorConfig,
@@ -30,7 +32,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m scripts.final_runtime_validation")
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--ha-harness", type=Path, default=None)
-    parser.add_argument("--addon-image", default="local/homewakeword-bcresnet")
+    parser.add_argument("--addon-image", default="local/homewakeword")
     parser.add_argument("--addon-config", type=Path, default=DEFAULT_ADDON_CONFIG)
     parser.add_argument("--output", type=Path, required=True)
     return parser
@@ -48,7 +50,15 @@ def final_runtime_validation(
         raise ValueError("repo validation failed: " + "; ".join(repo_errors))
     startup_message = validate_startup(manifest_path)
     release_message = validate_release(manifest_path, addon_config_path)
-    addon_slug = addon_config_path.parent.name
+    addon_config_raw = (
+        yaml.safe_load(addon_config_path.read_text(encoding="utf-8")) or {}
+    )
+    if not isinstance(addon_config_raw, dict):
+        raise ValueError(f"add-on config root must be a mapping: {addon_config_path}")
+    addon_slug_value = addon_config_raw.get("slug")
+    if not isinstance(addon_slug_value, str) or not addon_slug_value.strip():
+        raise ValueError(f"add-on config is missing a valid slug: {addon_config_path}")
+    addon_slug = addon_slug_value
     registry = load_registry(manifest_path, require_artifact=True)
     default_manifest = registry.default_model
     if default_manifest.evaluation is None:
