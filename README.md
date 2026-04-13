@@ -19,11 +19,17 @@ The project is built on top of:
 
 ## Supported wake words
 
-- `okay_nabu`
+Default BC-ResNet runtime:
+
 - `hey_jarvis`
+
+Optional real openWakeWord-backed runtime:
+
+- `okay_nabu`
 - `alexa`
 - `hey_mycroft`
 - `hey_rhasspy`
+- `hey_jarvis`
 
 ## Install in Home Assistant
 
@@ -61,7 +67,7 @@ Important:
 
 - host: `0.0.0.0`
 - port: `10700`
-- model manifest: `/app/models/manifest.yaml`
+- model manifest: `/app/models/bcresnet-real/manifest.yaml`
 - custom model directory: `/share/homewakeword/models`
 - **VAD: enabled by default**
 - **Speex noise suppression: enabled by default**
