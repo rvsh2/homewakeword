@@ -14,6 +14,7 @@ import yaml
 
 from homewakeword.config import AudioInputConfig, DetectorConfig, LogMelFrontendConfig
 
+SUPPORTED_BACKENDS = {"bcresnet", "openwakeword"}
 SUPPORTED_BACKEND = "bcresnet"
 DEFAULT_FRAMEWORK = "tflite"
 ONNX_ENV_FLAG = "HOMEWAKE_ENABLE_ONNX"
@@ -273,13 +274,17 @@ def _require_string(
     return value.strip()
 
 
-def _coerce_framework(value: str | None) -> str:
+def _coerce_framework(value: str | None, *, backend: str | None = None) -> str:
     framework = (value or DEFAULT_FRAMEWORK).strip().lower()
     if framework not in _FRAMEWORK_SUFFIXES:
         raise ManifestValidationError(
             f"unsupported framework '{framework}'; supported values are: {', '.join(sorted(_FRAMEWORK_SUFFIXES))}"
         )
-    if framework == "onnx" and os.getenv(ONNX_ENV_FLAG) != "1":
+    if (
+        framework == "onnx"
+        and backend != "openwakeword"
+        and os.getenv(ONNX_ENV_FLAG) != "1"
+    ):
         raise ManifestValidationError(
             f"framework 'onnx' requires explicit opt-in via {ONNX_ENV_FLAG}=1"
         )
@@ -420,9 +425,10 @@ def _sha256_file(path: Path) -> str:
 def validate_manifest(
     manifest: ModelManifest, *, require_artifact: bool = True
 ) -> ModelManifest:
-    if manifest.backend != SUPPORTED_BACKEND:
+    if manifest.backend not in SUPPORTED_BACKENDS:
         raise ManifestValidationError(
-            f"unsupported detector backend: expected '{SUPPORTED_BACKEND}', got '{manifest.backend}'"
+            "unsupported detector backend: expected one of "
+            f"{sorted(SUPPORTED_BACKENDS)}, got '{manifest.backend}'"
         )
     if manifest.sample_rate_hz != manifest.audio.sample_rate_hz:
         raise ManifestValidationError(
@@ -577,12 +583,12 @@ def _manifest_from_mapping(
         framework = DEFAULT_FRAMEWORK
         backend = SUPPORTED_BACKEND
     else:
-        framework = _coerce_framework(root.get("framework"))
         backend = _require_string(
             root,
             "backend",
             default=SUPPORTED_BACKEND,
         ).lower()
+        framework = _coerce_framework(root.get("framework"), backend=backend)
 
     manifest = ModelManifest(
         model_id=_require_string(root, "model_id", default="frontend_only"),
@@ -640,7 +646,9 @@ def load_registry(path: Path, *, require_artifact: bool = True) -> ModelRegistry
 
     raw_models = root.get("models")
     if not isinstance(raw_models, list) or not raw_models:
-        raise ManifestValidationError("manifest field 'models' must be a non-empty list")
+        raise ManifestValidationError(
+            "manifest field 'models' must be a non-empty list"
+        )
     manifests = tuple(
         _manifest_from_mapping(
             _as_mapping(entry, context="manifest.models[]"),

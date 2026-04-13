@@ -1,0 +1,122 @@
+default_model: hey_jarvis
+models:
+  - model_id: alexa_v0.1
+    wake_word: alexa
+    version: "0.1"
+    backend: openwakeword
+    framework: onnx
+    model_path: alexa_v0.1.onnx
+    threshold: 0.5
+    provenance:
+      source: https://github.com/dscripka/openWakeWord/releases/download/v0.5.1/alexa_v0.1.onnx
+      training_recipe: openwakeword-pretrained
+      training_recipe_version: v0.5.1
+      artifact_sha256: 6ff566a01d12670e8d9e3c59da32651db1575d17272a601b7f8a39283dfbae3e
+      license: CC-BY-NC-SA-4.0
+      provenance_status: approved
+    audio:
+      sample_rate_hz: 16000
+      sample_width_bytes: 2
+      channels: 1
+      frame_samples: 1280
+      window_seconds: 1.0
+    frontend:
+      n_fft: 512
+      win_length: 480
+      hop_length: 160
+      n_mels: 40
+      f_min_hz: 20.0
+      f_max_hz: 7600.0
+      log_floor: 1.0e-6
+      context_seconds: 1.0
+  - model_id: hey_jarvis_v0.1
+    wake_word: hey_jarvis
+    version: "0.1"
+    backend: openwakeword
+    framework: onnx
+    model_path: hey_jarvis_v0.1.onnx
+    threshold: 0.5
+    provenance:
+      source: https://github.com/dscripka/openWakeWord/releases/download/v0.5.1/hey_jarvis_v0.1.onnx
+      training_recipe: openwakeword-pretrained
+      training_recipe_version: v0.5.1
+      artifact_sha256: 94a13cfe60075b132f6a472e7e462e8123ee70861bc3fb58434a73712ee0d2cb
+      license: CC-BY-NC-SA-4.0
+      provenance_status: approved
+    audio:
+      sample_rate_hz: 16000
+      sample_width_bytes: 2
+      channels: 1
+      frame_samples: 1280
+      window_seconds: 1.0
+    frontend:
+      n_fft: 512
+      win_length: 480
+      hop_length: 160
+      n_mels: 40
+      f_min_hz: 20.0
+      f_max_hz: 7600.0
+      log_floor: 1.0e-6
+      context_seconds: 1.0
+    evaluation:
+      status: validated
+      positive_fixture: ../../tests/fixtures/openwakeword-benchmark/jarvis_0.wav
+      negative_fixture: ../../tests/fixtures/stream/no_wake_negative.wav
+  - model_id: hey_mycroft_v0.1
+    wake_word: hey_mycroft
+    version: "0.1"
+    backend: openwakeword
+    framework: onnx
+    model_path: hey_mycroft_v0.1.onnx
+    threshold: 0.5
+    provenance:
+      source: https://github.com/dscripka/openWakeWord/releases/download/v0.5.1/hey_mycroft_v0.1.onnx
+      training_recipe: openwakeword-pretrained
+      training_recipe_version: v0.5.1
+      artifact_sha256: c2a311e8fa1338de89c31b3b46dc4dffd4af2f9a8d6ddead48893c2d301b1f18
+      license: CC-BY-NC-SA-4.0
+      provenance_status: approved
+    audio:
+      sample_rate_hz: 16000
+      sample_width_bytes: 2
+      channels: 1
+      frame_samples: 1280
+      window_seconds: 1.0
+    frontend:
+      n_fft: 512
+      win_length: 480
+      hop_length: 160
+      n_mels: 40
+      f_min_hz: 20.0
+      f_max_hz: 7600.0
+      log_floor: 1.0e-6
+      context_seconds: 1.0
+  - model_id: hey_rhasspy_v0.1
+    wake_word: hey_rhasspy
+    version: "0.1"
+    backend: openwakeword
+    framework: onnx
+    model_path: hey_rhasspy_v0.1.onnx
+    threshold: 0.5
+    provenance:
+      source: https://github.com/dscripka/openWakeWord/releases/download/v0.5.1/hey_rhasspy_v0.1.onnx
+      training_recipe: openwakeword-pretrained
+      training_recipe_version: v0.5.1
+      artifact_sha256: 5a9b3ed3be2910e35780e097905aa9f35a9c10038df47914cf2b3ec4d670f6ea
+      license: CC-BY-NC-SA-4.0
+      provenance_status: approved
+    audio:
+      sample_rate_hz: 16000
+      sample_width_bytes: 2
+      channels: 1
+      frame_samples: 1280
+      window_seconds: 1.0
+    frontend:
+      n_fft: 512
+      win_length: 480
+      hop_length: 160
+      n_mels: 40
+      f_min_hz: 20.0
+      f_max_hz: 7600.0
+      log_floor: 1.0e-6
+      context_seconds: 1.0

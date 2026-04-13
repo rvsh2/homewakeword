@@ -14,6 +14,7 @@ from homewakeword.custom_import import (
     import_custom_model_bundles,
 )
 from homewakeword.detector.bcresnet import BCResNetDetector
+from homewakeword.detector.openwakeword_backend import OpenWakeWordDetector
 from homewakeword.health import build_runtime_health
 from homewakeword.registry import (
     ModelInventoryRecord,
@@ -271,11 +272,18 @@ def build_service(config: HomeWakeWordConfig) -> HomeWakeWordService:
     service_config = build_service_config(config, manifest)
     inventory = registry.inventory(verify_hash=True)
     config_echo = build_config_echo(service_config)
-    detector = BCResNetDetector(
-        config=service_config.detector,
-        manifest=manifest,
-        audio_config=service_config.audio,
-    )
+    if manifest.backend == "openwakeword":
+        detector = OpenWakeWordDetector(
+            config=service_config.detector,
+            manifest=manifest,
+            audio_config=service_config.audio,
+        )
+    else:
+        detector = BCResNetDetector(
+            config=service_config.detector,
+            manifest=manifest,
+            audio_config=service_config.audio,
+        )
     runtime = WyomingRuntime(config=service_config, detector=detector)
     server = WyomingServer.from_runtime(
         runtime,

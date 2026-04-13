@@ -6,9 +6,11 @@ from homewakeword.detector.base import (
     WakeWordDetector,
 )
 from homewakeword.detector.bcresnet import BCResNetDetector
+from homewakeword.detector.openwakeword_backend import OpenWakeWordDetector
 
 __all__ = [
     "BCResNetDetector",
+    "OpenWakeWordDetector",
     "DetectionDecision",
     "DetectorRuntimeState",
     "WakeWordDetector",

@@ -7,7 +7,7 @@ WORKDIR /app
 
 COPY . /build-context
 
-RUN python -m pip install --no-cache-dir "PyYAML>=6" "numpy>=1.26" "onnxruntime>=1.17.0" "speexdsp-ns>=0.1.2" "wyoming>=1.6.0" \
+RUN python -m pip install --no-cache-dir "PyYAML>=6" "numpy>=1.26" "onnxruntime>=1.17.0" "openwakeword>=0.6.0" "speexdsp-ns>=0.1.2" "wyoming>=1.6.0" \
     && if [ -d /build-context/rootfs/app ]; then \
          src=/build-context/rootfs/app; \
          run=/build-context/run.sh; \
