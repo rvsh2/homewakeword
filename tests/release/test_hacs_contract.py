@@ -43,7 +43,7 @@ def test_manifest_declares_config_flow_without_runtime_dependencies() -> None:
     assert payload["domain"] == "homewakeword"
     assert payload["name"] == "HomeWakeWord"
     assert payload["config_flow"] is True
-    assert payload["requirements"] == []
+    assert payload["requirements"] == ["wyoming==1.8.0"]
     assert payload["documentation"].endswith("#hacs-helper-integration")
 
 
@@ -95,6 +95,7 @@ def test_helper_notification_copy_mentions_runtime_settings() -> None:
     helper_spec.loader.exec_module(helper_module)
     HelperSettings = helper_module.HelperSettings
     ApplyResult = helper_module.ApplyResult
+    ConnectivityResult = helper_module.ConnectivityResult
     build_notification_message = helper_module.build_notification_message
 
     message = build_notification_message(
@@ -108,6 +109,11 @@ def test_helper_notification_copy_mentions_runtime_settings() -> None:
             speex_enabled=True,
         ),
         ApplyResult(status="applied", detail="options updated and restart requested"),
+        ConnectivityResult(
+            status="connected",
+            detail="received Wyoming info response",
+            active_wake_words=("okay_nabu", "hey_jarvis"),
+        ),
     )
 
     assert "Detector backend: `openwakeword`" in message
@@ -115,6 +121,8 @@ def test_helper_notification_copy_mentions_runtime_settings() -> None:
     assert "VAD threshold: `0.42`" in message
     assert "Speex noise suppression: `true`" in message
     assert "Add-on apply status: `applied`" in message
+    assert "Wyoming connectivity: `connected`" in message
+    assert "Active wake words: `okay_nabu, hey_jarvis`" in message
 
 
 def test_helper_payload_maps_options_to_addon_runtime_shape() -> None:

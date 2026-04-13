@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+import importlib.util
+from pathlib import Path
 
 try:
     from .const import (
@@ -10,31 +12,61 @@ try:
         WYOMING_HOST,
         WYOMING_PORT,
     )
+
+    _default_addon_name = ADDON_NAME
+    _default_detector_backend = DETECTOR_BACKEND
+    _default_speex_enabled = SPEEX_ENABLED
+    _default_vad_enabled = VAD_ENABLED
+    _default_vad_threshold = VAD_THRESHOLD
+    _default_wyoming_host = WYOMING_HOST
+    _default_wyoming_port = WYOMING_PORT
 except ImportError:  # pragma: no cover - test loader fallback
-    ADDON_NAME = "HomeWakeWord add-on"
-    DETECTOR_BACKEND = "bcresnet"
-    SPEEX_ENABLED = False
-    VAD_ENABLED = False
-    VAD_THRESHOLD = 0.5
-    WYOMING_HOST = "homewakeword"
-    WYOMING_PORT = 10700
+    const_path = Path(__file__).with_name("const.py")
+    spec = importlib.util.spec_from_file_location(
+        "homewakeword_const_fallback", const_path
+    )
+    if spec is not None and spec.loader is not None:
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        _default_addon_name = module.ADDON_NAME
+        _default_detector_backend = module.DETECTOR_BACKEND
+        _default_speex_enabled = module.SPEEX_ENABLED
+        _default_vad_enabled = module.VAD_ENABLED
+        _default_vad_threshold = module.VAD_THRESHOLD
+        _default_wyoming_host = module.WYOMING_HOST
+        _default_wyoming_port = module.WYOMING_PORT
+    else:  # pragma: no cover - extreme fallback
+        _default_addon_name = "HomeWakeWord add-on"
+        _default_detector_backend = "bcresnet"
+        _default_speex_enabled = False
+        _default_vad_enabled = False
+        _default_vad_threshold = 0.5
+        _default_wyoming_host = "homewakeword"
+        _default_wyoming_port = 10700
 
 
 @dataclass(frozen=True, slots=True)
 class HelperSettings:
-    addon_name: str = ADDON_NAME
-    wyoming_host: str = WYOMING_HOST
-    wyoming_port: int = WYOMING_PORT
-    detector_backend: str = DETECTOR_BACKEND
-    vad_enabled: bool = VAD_ENABLED
-    vad_threshold: float = VAD_THRESHOLD
-    speex_enabled: bool = SPEEX_ENABLED
+    addon_name: str = _default_addon_name
+    wyoming_host: str = _default_wyoming_host
+    wyoming_port: int = _default_wyoming_port
+    detector_backend: str = _default_detector_backend
+    vad_enabled: bool = _default_vad_enabled
+    vad_threshold: float = _default_vad_threshold
+    speex_enabled: bool = _default_speex_enabled
 
 
 @dataclass(frozen=True, slots=True)
 class ApplyResult:
     status: str
     detail: str
+
+
+@dataclass(frozen=True, slots=True)
+class ConnectivityResult:
+    status: str
+    detail: str
+    active_wake_words: tuple[str, ...] = ()
 
 
 def build_addon_options_payload(settings: HelperSettings) -> dict[str, object]:
@@ -57,13 +89,28 @@ def build_addon_options_payload(settings: HelperSettings) -> dict[str, object]:
 
 
 def build_notification_message(
-    settings: HelperSettings, apply_result: ApplyResult | None
+    settings: HelperSettings,
+    apply_result: ApplyResult | None,
+    connectivity_result: ConnectivityResult | None = None,
 ) -> str:
     status_line = "Add-on apply status: `not attempted`"
     if apply_result is not None:
         status_line = (
             f"Add-on apply status: `{apply_result.status}` ({apply_result.detail})"
         )
+
+    connectivity_line = "Wyoming connectivity: `not checked`"
+    wake_words_line = "Active wake words: `unknown`"
+    if connectivity_result is not None:
+        connectivity_line = f"Wyoming connectivity: `{connectivity_result.status}` ({connectivity_result.detail})"
+        if connectivity_result.active_wake_words:
+            wake_words_line = (
+                "Active wake words: `"
+                + ", ".join(connectivity_result.active_wake_words)
+                + "`"
+            )
+        else:
+            wake_words_line = "Active wake words: `none reported`"
 
     return (
         "HomeWakeWord installed from HACS is a helper integration. "
@@ -75,5 +122,7 @@ def build_notification_message(
         f"- VAD enabled: `{str(settings.vad_enabled).lower()}`\n"
         f"- VAD threshold: `{settings.vad_threshold}`\n"
         f"- Speex noise suppression: `{str(settings.speex_enabled).lower()}`\n"
-        f"- {status_line}"
+        f"- {status_line}\n"
+        f"- {connectivity_line}\n"
+        f"- {wake_words_line}"
     )

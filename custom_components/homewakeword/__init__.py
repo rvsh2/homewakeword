@@ -1,6 +1,7 @@
 # pyright: reportMissingImports=false
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Mapping
 import os
 
@@ -31,6 +32,7 @@ from .const import (
 )
 from .helper import (
     ApplyResult,
+    ConnectivityResult,
     HelperSettings,
     build_addon_options_payload,
     build_notification_message,
@@ -96,11 +98,61 @@ async def _show_notification(hass: HomeAssistant, entry: ConfigEntry) -> None:
         ),
     )
     apply_result = await _apply_addon_options(hass, settings)
+    connectivity_result = await _check_wyoming_connectivity(settings)
     persistent_notification.async_create(
         hass,
-        build_notification_message(settings, apply_result),
+        build_notification_message(settings, apply_result, connectivity_result),
         title=NOTIFICATION_TITLE,
         notification_id=NOTIFICATION_ID,
+    )
+
+
+async def _check_wyoming_connectivity(settings: HelperSettings) -> ConnectivityResult:
+    try:
+        from wyoming.client import AsyncClient
+        from wyoming.info import Describe, Info
+    except Exception as exc:  # pragma: no cover - dependency/runtime specific
+        return ConnectivityResult(status="unavailable", detail=str(exc))
+
+    try:
+        client = AsyncClient.from_uri(
+            f"tcp://{settings.wyoming_host}:{settings.wyoming_port}"
+        )
+        await client.connect()
+        try:
+            await client.write_event(Describe().event())
+            event = await asyncio.wait_for(client.read_event(), timeout=3)
+        finally:
+            try:
+                await client.disconnect()
+            except BaseException:
+                pass
+    except Exception as exc:
+        return ConnectivityResult(status="failed", detail=str(exc))
+
+    if event is None:
+        return ConnectivityResult(
+            status="failed", detail="no response from Wyoming service"
+        )
+    if event.type != "info":
+        return ConnectivityResult(
+            status="failed", detail=f"unexpected response type: {event.type}"
+        )
+    try:
+        info = Info.from_event(event)
+    except Exception as exc:
+        return ConnectivityResult(
+            status="failed", detail=f"invalid info response: {exc}"
+        )
+
+    wake_words: list[str] = []
+    for wake_program in info.wake:
+        for model in wake_program.models:
+            wake_words.append(model.name)
+    return ConnectivityResult(
+        status="connected",
+        detail="received Wyoming info response",
+        active_wake_words=tuple(wake_words),
     )
 
 

@@ -129,6 +129,38 @@ Start it with:
 docker compose up -d
 ```
 
+## Troubleshooting
+
+### HACS helper shows `failed` for Wyoming connectivity
+
+Check that:
+
+- the add-on is started
+- Wyoming is listening on port `10700`
+- Home Assistant can resolve host `homewakeword`
+- Home Assistant and the HomeWakeWord container are on the same Docker network when using the container name as host
+
+### `Failed to connect` in Wyoming
+
+Verify that the runtime is listening on `0.0.0.0:10700`, not only on `127.0.0.1`.
+
+### Custom model is not shown
+
+Check that the model bundle is in:
+
+- `/share/homewakeword/models`
+
+or optionally:
+
+- `/share/openwakeword`
+
+If you use only a `.tflite` file, HomeWakeWord will generate a sidecar manifest automatically, but the model will still be treated as auto-imported / unverifiable.
+
+### HACS helper cannot apply settings automatically
+
+The helper uses Supervisor API access to update add-on options and request a restart.
+If Supervisor API access is unavailable, the helper will keep showing the chosen settings and report the apply status as unavailable or failed.
+
 ## Additional documentation
 
 - developer setup: [docs/development.md](docs/development.md)
