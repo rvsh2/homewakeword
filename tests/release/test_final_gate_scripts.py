@@ -12,7 +12,7 @@ from scripts.verify_plan_compliance import audit_plan_compliance
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 PLAN_PATH = REPO_ROOT / "tests" / "fixtures" / "plans" / "implementation-plan.md"
-EVIDENCE_ROOT = REPO_ROOT / ".sisyphus" / "evidence"
+EVIDENCE_ROOT = REPO_ROOT / ".homewakeword" / "evidence"
 MANIFEST_PATH = REPO_ROOT / "models" / "manifest.yaml"
 ADDON_CONFIG = REPO_ROOT / "addon" / "homewakeword" / "config.yaml"
 

@@ -11,7 +11,7 @@ from scripts.validate_repo import REQUIRED_REVIEW_SECTIONS
 REVIEW_ARTIFACT_MARKER = "<!-- homewakeword-review-artifact -->"
 DEFAULT_PLAN_PATH = (
     Path(__file__).resolve().parents[1]
-    / ".sisyphus"
+    / ".homewakeword"
     / "plans"
     / "implementation-plan.md"
 )

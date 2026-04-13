@@ -24,7 +24,7 @@ from scripts.ha_smoke import (
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-EVIDENCE_ROOT = REPO_ROOT / ".sisyphus" / "evidence"
+EVIDENCE_ROOT = REPO_ROOT / ".homewakeword" / "evidence"
 FIXTURE_MANIFEST = (
     REPO_ROOT / "tests" / "fixtures" / "manifests" / "ok_nabu_detector.yaml"
 )
@@ -43,11 +43,11 @@ def test_supervised_harness_shape_is_present() -> None:
     assert supervisor["environment"]["SUPERVISOR_MACHINE"] == "generic-x86-64"
     assert (
         supervisor["environment"]["SUPERVISOR_SHARE"]
-        == "/opt/homewakeword/.sisyphus/ha-supervised/share"
+        == "/opt/homewakeword/.homewakeword/ha-supervised/share"
     )
     assert any("/var/run/docker.sock" in str(entry) for entry in supervisor["volumes"])
     assert any(
-        "/opt/homewakeword/.sisyphus/ha-supervised/share" in str(entry)
+        "/opt/homewakeword/.homewakeword/ha-supervised/share" in str(entry)
         for entry in supervisor["volumes"]
     )
     assert _resolve_registry_service_host(raw) == "localhost.localdomain:5000"

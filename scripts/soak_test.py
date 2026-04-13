@@ -30,7 +30,7 @@ from homewakeword.runtime import (
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUTPUT = REPO_ROOT / ".sisyphus" / "evidence" / "task-12-soak.json"
+DEFAULT_OUTPUT = REPO_ROOT / ".homewakeword" / "evidence" / "task-12-soak.json"
 DEFAULT_CYCLES_PER_HOUR = 6
 DEFAULT_STARTUP_LIMIT_MS = 250.0
 MEMORY_GROWTH_LIMIT_PERCENT = 20.0

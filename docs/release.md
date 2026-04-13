@@ -41,7 +41,7 @@ The planned autonomous review flow is intentionally split into two commands.
 ### 1. Generate the review artifact
 
 ```bash
-python -m scripts.generate_review --task 14 --tests "python -m pytest tests/docs tests/release -q && python -m scripts.release_dry_run" --notes "docs and dry-run automation" --output .sisyphus/evidence/reviews/commit-14.md
+python -m scripts.generate_review --task 14 --tests "python -m pytest tests/docs tests/release -q && python -m scripts.release_dry_run" --notes "docs and dry-run automation" --output .homewakeword/evidence/reviews/commit-14.md
 ```
 
 This writes the review artifact and captures the checklist headings from `.github/PRE_COMMIT_REVIEW.md`.
@@ -49,7 +49,7 @@ This writes the review artifact and captures the checklist headings from `.githu
 ### 2. Commit only with an existing review artifact
 
 ```bash
-python -m scripts.commit_with_review --task 14 --message "docs(release): finalize workflows and commit review automation" --review .sisyphus/evidence/reviews/commit-14.md
+python -m scripts.commit_with_review --task 14 --message "docs(release): finalize workflows and commit review automation" --review .homewakeword/evidence/reviews/commit-14.md
 ```
 
 `commit_with_review` validates the supplied artifact and only then attempts the commit. It does **not** auto-create missing review artifacts.

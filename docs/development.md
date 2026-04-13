@@ -31,13 +31,13 @@ Replay is the fastest way to validate detector behavior with committed fixtures 
 Positive replay example:
 
 ```bash
-python -m scripts.replay_stream --manifest models/manifest.yaml --wake-word okay_nabu --input tests/fixtures/stream/okay_nabu_positive.wav --expect okay_nabu --json-out .sisyphus/evidence/task-runtime-ok-nabu.json
+python -m scripts.replay_stream --manifest models/manifest.yaml --wake-word okay_nabu --input tests/fixtures/stream/okay_nabu_positive.wav --expect okay_nabu --json-out .homewakeword/evidence/task-runtime-ok-nabu.json
 ```
 
 Negative replay example:
 
 ```bash
-python -m scripts.replay_stream --manifest models/manifest.yaml --wake-word okay_nabu --input tests/fixtures/stream/okay_nabu_negative.wav --expect none --json-out .sisyphus/evidence/task-runtime-negative.json
+python -m scripts.replay_stream --manifest models/manifest.yaml --wake-word okay_nabu --input tests/fixtures/stream/okay_nabu_negative.wav --expect none --json-out .homewakeword/evidence/task-runtime-negative.json
 ```
 
 ## Add-on build and test

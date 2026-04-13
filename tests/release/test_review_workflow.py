@@ -41,7 +41,7 @@ def test_commit_with_review_blocks_missing_review_artifact(capsys) -> None:
             "--message",
             "docs(release): finalize workflows and commit review automation",
             "--review",
-            ".sisyphus/evidence/reviews/commit-14.md",
+            ".homewakeword/evidence/reviews/commit-14.md",
         ]
     )
 
