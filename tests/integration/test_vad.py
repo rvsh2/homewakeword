@@ -27,7 +27,9 @@ def _build_vad_service() -> HomeWakeWordService:
         HomeWakeWordConfig(
             detector=DetectorConfig(
                 manifest_path=MANIFEST_PATH,
-                vad=VADConfig(enabled=True, threshold=0.5),
+                threshold=0.05,
+                enable_speex_noise_suppression=False,
+                vad=VADConfig(enabled=True, threshold=0.2),
             ),
             server=WyomingServerConfig(host="127.0.0.1", port=0),
         )
@@ -90,7 +92,9 @@ def test_speex_noise_suppression_keeps_positive_detection_working() -> None:
         HomeWakeWordConfig(
             detector=DetectorConfig(
                 manifest_path=MANIFEST_PATH,
+                threshold=0.05,
                 enable_speex_noise_suppression=True,
+                vad=VADConfig(enabled=False),
             ),
             server=WyomingServerConfig(host="127.0.0.1", port=0),
         )

@@ -67,7 +67,7 @@ class DetectorConfig:
     cooldown: CooldownConfig = field(default_factory=CooldownConfig)
     refractory: RefractoryConfig = field(default_factory=RefractoryConfig)
     frontend: LogMelFrontendConfig = field(default_factory=LogMelFrontendConfig)
-    enable_speex_noise_suppression: bool = False
+    enable_speex_noise_suppression: bool = True
     vad: "VADConfig" = field(default_factory=lambda: VADConfig())
 
 
@@ -75,7 +75,7 @@ class DetectorConfig:
 class VADConfig:
     """Optional Silero-style VAD gating configuration."""
 
-    enabled: bool = False
+    enabled: bool = True
     threshold: float = 0.5
     n_threads: int = 1
     model_path: Path | None = None

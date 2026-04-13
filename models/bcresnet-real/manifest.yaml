@@ -1,0 +1,35 @@
+default_model: hey_jarvis
+models:
+  - model_id: hey_jarvis_main100_v1
+    wake_word: hey_jarvis
+    version: "1.0.0"
+    backend: bcresnet
+    framework: tflite
+    model_path: bcresnet_float32.tflite
+    threshold: 0.00001
+    provenance:
+      source: https://raw.githubusercontent.com/rolyantrauts/bcresnet/main/models/Main-100/bcresnet_float32.tflite
+      training_recipe: rolyantrauts-bcresnet-main100
+      training_recipe_version: main
+      artifact_sha256: 9f969d1d914d24f76073a25ebbc3663e62c1d1c96cecf522149086682b4f7f1f
+      license: MIT
+      provenance_status: approved
+    evaluation:
+      status: validated
+      positive_fixture: ../../tests/fixtures/openwakeword-benchmark/jarvis_0.wav
+      negative_fixture: ../../tests/fixtures/stream/no_wake_negative.wav
+    audio:
+      sample_rate_hz: 16000
+      sample_width_bytes: 2
+      channels: 1
+      frame_samples: 1280
+      window_seconds: 1.4
+    frontend:
+      n_fft: 480
+      win_length: 480
+      hop_length: 160
+      n_mels: 80
+      f_min_hz: 0.0
+      f_max_hz: 8000.0
+      log_floor: 1.0e-10
+      context_seconds: 1.4
