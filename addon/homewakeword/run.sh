@@ -52,4 +52,4 @@ os.execvp(args[0], args)
 PYADDON
 fi
 
-exec python -m homewakeword.cli serve --host 0.0.0.0 --port 10700 --custom-models --custom-model-dir /share/homewakeword/models --no-openwakeword-compat --openwakeword-model-dir /share/openwakeword --no-enable-speex-noise-suppression --no-vad-enabled --vad-threshold 0.5
+exec python -m homewakeword.cli serve --host 0.0.0.0 --port 10700 --detector-backend bcresnet --manifest /app/models/bcresnet-real/manifest.yaml --custom-models --custom-model-dir /share/homewakeword/models --no-openwakeword-compat --openwakeword-model-dir /share/openwakeword --enable-speex-noise-suppression --vad-enabled --vad-threshold 0.5

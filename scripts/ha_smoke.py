@@ -30,7 +30,7 @@ from scripts.replay_stream import main as replay_stream_main
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_MANIFEST = REPO_ROOT / "models" / "manifest.yaml"
+DEFAULT_MANIFEST = REPO_ROOT / "models" / "bcresnet-real" / "manifest.yaml"
 DEFAULT_ADDON_DOCKERFILE = REPO_ROOT / "addon" / "homewakeword" / "Dockerfile"
 DEFAULT_ADDON_SOURCE = REPO_ROOT / "addon" / "homewakeword"
 DEFAULT_HARNESS = (
@@ -341,7 +341,7 @@ def _build_addon_options(port: int) -> dict[str, object]:
         "host": "0.0.0.0",
         "port": port,
         "detector_backend": "bcresnet",
-        "manifest": "/app/models/manifest.yaml",
+        "manifest": "/app/models/bcresnet-real/manifest.yaml",
         "custom_models": False,
         "custom_model_dir": "/share/homewakeword/models",
         "openwakeword_compat": False,
@@ -877,6 +877,8 @@ def _run_supervisor_managed_addon_attempt(
         log_path=script_log,
         timeout_seconds=600,
     )
+    if attempt_artifact.exists():
+        attempt_artifact.unlink()
     copy_artifact = _run_command(
         [
             "docker",

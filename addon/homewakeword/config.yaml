@@ -21,13 +21,13 @@ options:
   host: 0.0.0.0
   port: 10700
   detector_backend: bcresnet
-  manifest: /app/models/manifest.yaml
+  manifest: /app/models/bcresnet-real/manifest.yaml
   custom_models: true
   custom_model_dir: /share/homewakeword/models
   openwakeword_compat: false
   openwakeword_model_dir: /share/openwakeword
-  enable_speex_noise_suppression: false
-  vad_enabled: false
+  enable_speex_noise_suppression: true
+  vad_enabled: true
   vad_threshold: 0.5
   log_level: info
 schema:

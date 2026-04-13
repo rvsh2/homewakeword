@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import json
 from pathlib import Path
 import time
 
-from homewakeword.audio import AudioChunk, floats_to_pcm16le
+from homewakeword.audio import AudioChunk, floats_to_pcm16le, iter_wave_chunks
+from homewakeword.config import VADConfig
 from homewakeword.registry import ModelInventoryRecord
-from homewakeword.runtime import HomeWakeWordService, build_runtime_report
+from homewakeword.runtime import (
+    HomeWakeWordService,
+    build_runtime_report,
+    build_service,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,6 +55,17 @@ class SelfTestResult:
         }
 
 
+def _fixture_chunks(service: HomeWakeWordService) -> tuple[AudioChunk, ...]:
+    positive_fixture = (
+        service.manifest.evaluation.positive_fixture
+        if service.manifest.evaluation
+        else None
+    )
+    if positive_fixture is not None and positive_fixture.exists():
+        return tuple(iter_wave_chunks(positive_fixture, service.config.audio))
+    return ()
+
+
 def _loud_chunk(service: HomeWakeWordService) -> AudioChunk:
     samples = [0.9] * service.config.audio.frame_samples
     return AudioChunk(
@@ -65,24 +81,40 @@ def run_self_test(
 ) -> SelfTestResult:
     """Exercise startup, describe, audio, detection, and shutdown paths."""
 
-    server = service.server
+    test_config = replace(
+        service.config,
+        detector=replace(
+            service.config.detector,
+            enable_speex_noise_suppression=False,
+            vad=VADConfig(enabled=False),
+        ),
+    )
+    test_service = build_service(test_config)
+    server = test_service.server
     detection_event = None
     startup_started = time.perf_counter()
     server.start(bind_listener=False)
     startup_duration_ms = round((time.perf_counter() - startup_started) * 1000.0, 3)
     try:
         startup_health = build_runtime_report(
-            service,
+            test_service,
             startup_duration_ms=startup_duration_ms,
         )
-        for _ in range(4):
-            detection_event = server.handle_audio_chunk(_loud_chunk(service))
-            if detection_event is not None:
-                break
+        chunks = _fixture_chunks(test_service)
+        if chunks:
+            for chunk in chunks:
+                detection_event = server.handle_audio_chunk(chunk)
+                if detection_event is not None:
+                    break
+        else:
+            for _ in range(4):
+                detection_event = server.handle_audio_chunk(_loud_chunk(service))
+                if detection_event is not None:
+                    break
     finally:
         server.stop()
 
-    shutdown_health = build_runtime_report(service)
+    shutdown_health = build_runtime_report(test_service)
     startup_diagnostics = startup_health.get("diagnostics")
     startup_resources = (
         {}
@@ -97,15 +129,15 @@ def run_self_test(
         loaded_wake_words=tuple(
             wake_word.name for wake_word in server.describe().wake_words
         ),
-        loaded_models=service.inventory,
-        imported_wake_words=service.custom_imports.imported_wake_words,
-        import_rejections=service.custom_imports.rejected,
+        loaded_models=test_service.inventory,
+        imported_wake_words=test_service.custom_imports.imported_wake_words,
+        import_rejections=test_service.custom_imports.rejected,
         detection_emitted=detection_event is not None,
         detection_wake_word=None
         if detection_event is None
         else detection_event.wake_word,
         service_uri=server.uri,
-        config=service.config_echo,
+        config=test_service.config_echo,
         startup_duration_ms=startup_duration_ms,
         startup_resources=startup_resources,
         startup_health=startup_health,

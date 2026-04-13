@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from dataclasses import replace
 from typing import TYPE_CHECKING
 
 from homewakeword.audio import iter_wave_chunks
-from homewakeword.config import HomeWakeWordConfig
+from homewakeword.config import HomeWakeWordConfig, VADConfig
 from homewakeword.detector.bcresnet import BCResNetDetector
 from homewakeword.events import DetectionEventType
 from homewakeword.server.wyoming import WyomingRuntime
@@ -38,15 +39,18 @@ class EvaluationSummary:
 
 
 def _run_detection(manifest: ModelManifest, *, input_path) -> DetectionSummary:
+    detector_config = replace(
+        manifest.detector_config(),
+        enable_speex_noise_suppression=False,
+        vad=VADConfig(enabled=False),
+    )
     detector = BCResNetDetector(
-        config=manifest.detector_config(),
+        config=detector_config,
         manifest=manifest,
         audio_config=manifest.audio,
     )
     runtime = WyomingRuntime(
-        config=HomeWakeWordConfig(
-            audio=manifest.audio, detector=manifest.detector_config()
-        ),
+        config=HomeWakeWordConfig(audio=manifest.audio, detector=detector_config),
         detector=detector,
     )
     detector.open()

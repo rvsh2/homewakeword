@@ -75,7 +75,7 @@ def build_addon_options_payload(settings: HelperSettings) -> dict[str, object]:
             "host": "0.0.0.0",
             "port": settings.wyoming_port,
             "detector_backend": settings.detector_backend,
-            "manifest": "/app/models/manifest.yaml",
+            "manifest": "/app/models/bcresnet-real/manifest.yaml",
             "custom_models": True,
             "custom_model_dir": "/share/homewakeword/models",
             "openwakeword_compat": False,

@@ -26,7 +26,9 @@ from homewakeword.registry import (
 from homewakeword.server.wyoming import WyomingRuntime, WyomingServer
 
 
-DEFAULT_MANIFEST_PATH = Path(__file__).resolve().parents[1] / "models" / "manifest.yaml"
+DEFAULT_MANIFEST_PATH = (
+    Path(__file__).resolve().parents[1] / "models" / "bcresnet-real" / "manifest.yaml"
+)
 _SENSITIVE_KEY_MARKERS = (
     "password",
     "secret",

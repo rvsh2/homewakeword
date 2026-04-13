@@ -200,6 +200,8 @@ class SpeexNoiseSuppressor:
 
     def process_chunk(self, chunk: AudioChunk) -> AudioChunk:
         if self._noise_suppressor is None:
+            self.open()
+        if self._noise_suppressor is None:
             raise NoiseSuppressionRuntimeError(
                 "Speex noise suppression is not initialized"
             )
