@@ -180,7 +180,7 @@ class SpeexNoiseSuppressor:
 
     frame_size: int = 160
     sample_rate_hz: int = 16_000
-    _noise_suppressor: object | None = None
+    _noise_suppressor: _NoiseSuppressorProtocol | None = None
 
     def open(self) -> None:
         if self._noise_suppressor is not None:
