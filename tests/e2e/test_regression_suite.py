@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import socket
 import subprocess
+import sys
 from tempfile import TemporaryDirectory
 import time
 
@@ -27,7 +28,7 @@ EVIDENCE_ROOT = REPO_ROOT / ".sisyphus" / "evidence"
 FIXTURE_MANIFEST = (
     REPO_ROOT / "tests" / "fixtures" / "manifests" / "ok_nabu_detector.yaml"
 )
-VENV_PYTHON = REPO_ROOT / ".venv" / "bin" / "python"
+PYTHON_EXECUTABLE = Path(sys.executable)
 
 
 def test_supervised_harness_shape_is_present() -> None:
@@ -172,7 +173,7 @@ def test_cli_serve_exposes_real_wyoming_tcp_listener() -> None:
         port = int(sock.getsockname()[1])
     process = subprocess.Popen(
         [
-            str(VENV_PYTHON),
+            str(PYTHON_EXECUTABLE),
             "-m",
             "homewakeword.cli",
             "serve",

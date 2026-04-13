@@ -1,0 +1,5 @@
+- [x] 14. Finalize developer docs, release workflow, and commit discipline automation
+- [x] F1. Plan Compliance Audit — oracle
+- [x] F2. Code Quality Review — unspecified-high
+- [x] F3. Real Manual QA — unspecified-high (+ playwright if UI becomes necessary later)
+- [x] F4. Scope Fidelity Check — deep

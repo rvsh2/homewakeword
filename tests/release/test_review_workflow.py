@@ -7,7 +7,7 @@ from scripts.generate_review import generate_review
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-PLAN_PATH = REPO_ROOT / ".sisyphus" / "plans" / "implementation-plan.md"
+PLAN_PATH = REPO_ROOT / "tests" / "fixtures" / "plans" / "implementation-plan.md"
 
 
 def test_generate_review_writes_required_review_artifact(tmp_path: Path) -> None:
