@@ -7,7 +7,12 @@ from typing import cast
 import yaml
 
 from homewakeword.audio import iter_wave_chunks
-from homewakeword.config import DetectorConfig, HomeWakeWordConfig, WyomingServerConfig
+from homewakeword.config import (
+    DetectorConfig,
+    HomeWakeWordConfig,
+    VADConfig,
+    WyomingServerConfig,
+)
 from homewakeword.detector.bcresnet import BCResNetRuntimeError
 from homewakeword.registry import ManifestValidationError
 from homewakeword.runtime import (
@@ -27,7 +32,11 @@ INVALID_SWAP_MANIFEST = MANIFEST_ROOT / "restart_swap_invalid_missing_artifact.y
 
 def _build_config(manifest_path: Path, *, port: int = 10400) -> HomeWakeWordConfig:
     return HomeWakeWordConfig(
-        detector=DetectorConfig(manifest_path=manifest_path),
+        detector=DetectorConfig(
+            manifest_path=manifest_path,
+            enable_speex_noise_suppression=False,
+            vad=VADConfig(enabled=False),
+        ),
         server=WyomingServerConfig(host="127.0.0.1", port=port),
     )
 

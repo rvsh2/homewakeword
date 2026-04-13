@@ -4,7 +4,12 @@ import os
 from pathlib import Path
 
 from homewakeword.audio import iter_wave_chunks
-from homewakeword.config import DetectorConfig, HomeWakeWordConfig, WyomingServerConfig
+from homewakeword.config import (
+    DetectorConfig,
+    HomeWakeWordConfig,
+    VADConfig,
+    WyomingServerConfig,
+)
 from homewakeword.events import DetectionEventType
 from homewakeword.runtime import HomeWakeWordService, build_service
 
@@ -25,6 +30,8 @@ def _build_openwakeword_service() -> HomeWakeWordService:
                 backend="openwakeword",
                 manifest_path=MANIFEST_PATH,
                 threshold=0.5,
+                enable_speex_noise_suppression=False,
+                vad=VADConfig(enabled=False),
             ),
             server=WyomingServerConfig(host="127.0.0.1", port=0),
         )

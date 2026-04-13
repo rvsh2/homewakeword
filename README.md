@@ -3,7 +3,7 @@
 HomeWakeWord is a **wake word detection engine** for **Home Assistant**.
 It runs as a **Home Assistant add-on** and exposes wake word detection through the **Wyoming protocol**.
 
-It is built around:
+The project is built on top of:
 
 - [BC-ResNet](https://github.com/rolyantrauts/bcresnet)
 - [openWakeWord](https://github.com/dscripka/openWakeWord)
@@ -15,6 +15,7 @@ It is built around:
 - Wyoming integration for Home Assistant
 - built-in wake words
 - custom model import
+- optional real openWakeWord-backed inference backend
 
 ## Supported wake words
 
@@ -24,40 +25,37 @@ It is built around:
 - `hey_mycroft`
 - `hey_rhasspy`
 
-## Home Assistant installation
+## Install in Home Assistant
 
-### Add-on runtime path
+### Add-on runtime
 
 1. Add this repository as a custom add-on repository in Home Assistant.
 2. Install the **HomeWakeWord** add-on.
 3. Start the add-on.
 4. Add the built-in **Wyoming** integration in Home Assistant.
-5. Use host `homewakeword` and port `10700`.
+5. Use:
+   - host: `homewakeword`
+   - port: `10700`
 6. Select the wake word in your Assist configuration.
 
 ### Install via HACS
 
 This repository is also HACS-installable as a custom **Integration**.
 
-1. Open **HACS** in Home Assistant.
+1. Open **HACS**.
 2. Add this repository as a custom repository.
 3. Select repository type **Integration**.
-4. Install **HomeWakeWord** from HACS.
+4. Install **HomeWakeWord**.
 5. Restart Home Assistant.
 6. Add the **HomeWakeWord** integration.
 
 Important:
 
-- HACS installs only the lightweight **HomeWakeWord** helper integration under `custom_components/`.
-- HACS does **not** install, start, or manage the HomeWakeWord add-on runtime.
-- After installing via HACS, use the helper integration only for onboarding guidance.
-- The actual runtime still runs through the **HomeWakeWord add-on** plus the built-in **Wyoming** integration.
-- Wyoming should connect to host `homewakeword` and port `10700`.
-- The helper integration now also lets you store user-facing settings for:
-  - detector backend
-  - VAD enabled / threshold
-  - Speex noise suppression
-  - Wyoming host / port
+- HACS installs only the lightweight **HomeWakeWord** helper integration under `custom_components/`
+- HACS does **not** install, start, or manage the HomeWakeWord add-on runtime
+- the actual runtime still runs through the **HomeWakeWord add-on** and the built-in **Wyoming** integration
+- use the built-in **Wyoming** integration with host `homewakeword` and port `10700`
+- the built-in **Wyoming** integration should use host `homewakeword` and port `10700`
 
 ## Default add-on settings
 
@@ -65,10 +63,12 @@ Important:
 - port: `10700`
 - model manifest: `/app/models/manifest.yaml`
 - custom model directory: `/share/homewakeword/models`
+- **VAD: enabled by default**
+- **Speex noise suppression: enabled by default**
 
 ## Custom wake words
 
-Custom model bundles should be placed in:
+Primary model import path:
 
 - `/share/homewakeword/models`
 
@@ -76,12 +76,12 @@ Optional compatibility path:
 
 - `/share/openwakeword`
 
-Important:
+Supported import styles:
 
-- a full bundle is supported
-- a standalone `.tflite` file is also supported for openWakeWord-style import
-- when only a `.tflite` file is present, HomeWakeWord generates a sidecar manifest automatically
-- auto-generated imports are treated as auto-imported / unverifiable metadata sources
+- full model bundle
+- standalone `.tflite` file
+
+If only a `.tflite` file is present, HomeWakeWord generates a sidecar manifest automatically.
 
 ## Run locally
 
@@ -103,7 +103,7 @@ Run a self-test:
 python -m homewakeword.cli serve --self-test --report /tmp/self-test.json
 ```
 
-## Run locally with Docker
+## Run with Docker
 
 Build the image:
 
@@ -119,7 +119,7 @@ docker run --rm -p 10700:10700 local/homewakeword serve --host 0.0.0.0 --port 10
 
 ## Run with Docker Compose
 
-This repository includes a ready-to-use file:
+This repository includes:
 
 - `docker-compose.yml`
 
@@ -131,22 +131,27 @@ docker compose up -d
 
 ## Troubleshooting
 
-### HACS helper shows `failed` for Wyoming connectivity
+### `Failed to connect` in Wyoming
+
+Check that:
+
+- the add-on is running
+- Wyoming is listening on `0.0.0.0:10700`
+- Home Assistant can resolve host `homewakeword`
+- Home Assistant and HomeWakeWord are on the same Docker network if you use the container name as host
+
+### HACS helper shows failed connectivity
 
 Check that:
 
 - the add-on is started
-- Wyoming is listening on port `10700`
-- Home Assistant can resolve host `homewakeword`
-- Home Assistant and the HomeWakeWord container are on the same Docker network when using the container name as host
-
-### `Failed to connect` in Wyoming
-
-Verify that the runtime is listening on `0.0.0.0:10700`, not only on `127.0.0.1`.
+- host is `homewakeword`
+- port is `10700`
+- the Wyoming integration can reach the container from Home Assistant
 
 ### Custom model is not shown
 
-Check that the model bundle is in:
+Check that the model or bundle is placed in:
 
 - `/share/homewakeword/models`
 
@@ -154,61 +159,25 @@ or optionally:
 
 - `/share/openwakeword`
 
-If you use only a `.tflite` file, HomeWakeWord will generate a sidecar manifest automatically, but the model will still be treated as auto-imported / unverifiable.
+## Technology
 
-### HACS helper cannot apply settings automatically
-
-The helper uses Supervisor API access to update add-on options and request a restart.
-If Supervisor API access is unavailable, the helper will keep showing the chosen settings and report the apply status as unavailable or failed.
+- audio frontend: 16 kHz, mono, PCM16
+- detection model: **BC-ResNet**
+- optional real backend: **openWakeWord-based inference**
+- VAD: **Silero VAD**
+- noise suppression: **SpeexDSP**
+- protocol layer: **Wyoming**
+- packaging: **Home Assistant add-on**
 
 ## Additional documentation
 
 - developer setup: [docs/development.md](docs/development.md)
 - release workflow: [docs/release.md](docs/release.md)
 
-## HACS helper integration
-
-The HACS-installed `homewakeword` integration is an onboarding shim only.
-
-- It creates a config entry so Home Assistant can load the integration.
-- It shows setup guidance reminding you to install/start the **HomeWakeWord** add-on separately.
-- It points you to the built-in **Wyoming** integration with host `homewakeword` and port `10700`.
-- It does not proxy audio, download artifacts, clone repositories, or manage the runtime.
-
 Maintainer tooling includes:
 
 - `python -m scripts.generate_review`
 - `python -m scripts.commit_with_review`
-
-## Technology
-
-- audio frontend: 16 kHz, mono, PCM16
-- detection model: **BC-ResNet**
-- optional VAD: **Silero VAD**
-- optional noise suppression: **SpeexDSP**
-- protocol layer: **Wyoming**
-- packaging: **Home Assistant add-on**
-
-## Optional VAD and noise suppression
-
-HomeWakeWord supports two optional audio-processing features inspired by openWakeWord:
-
-- **Silero VAD** for post-inference speech gating
-- **SpeexDSP noise suppression** before frontend processing
-
-Add-on options:
-
-- `vad_enabled`
-- `vad_threshold`
-- `enable_speex_noise_suppression`
-
-By default, both are disabled.
-
-## Limitations
-
-- this is not a binary drop-in replacement for openWakeWord
-- only validated models are advertised by the runtime
-- some behavior depends on the local Docker / Home Assistant Supervisor environment
 
 ## License
 

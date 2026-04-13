@@ -4,7 +4,12 @@ import json
 from pathlib import Path
 from typing import cast
 
-from homewakeword.config import DetectorConfig, HomeWakeWordConfig, WyomingServerConfig
+from homewakeword.config import (
+    DetectorConfig,
+    HomeWakeWordConfig,
+    VADConfig,
+    WyomingServerConfig,
+)
 from homewakeword.runtime import HomeWakeWordService, build_service
 from homewakeword.selftest import run_self_test
 
@@ -16,7 +21,11 @@ MANIFEST_PATH = FIXTURE_ROOT / "manifests" / "ok_nabu_detector.yaml"
 def _build_fixture_service() -> HomeWakeWordService:
     return build_service(
         HomeWakeWordConfig(
-            detector=DetectorConfig(manifest_path=MANIFEST_PATH),
+            detector=DetectorConfig(
+                manifest_path=MANIFEST_PATH,
+                enable_speex_noise_suppression=False,
+                vad=VADConfig(enabled=False),
+            ),
             server=WyomingServerConfig(host="127.0.0.1", port=10400),
         )
     )
