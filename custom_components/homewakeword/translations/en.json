@@ -6,7 +6,7 @@
     "step": {
       "user": {
         "title": "Finish HomeWakeWord setup",
-        "description": "HomeWakeWord installed from HACS is only a helper integration.\n\n1. Install and start the HomeWakeWord add-on separately.\n2. Add Home Assistant's built-in Wyoming integration.\n3. Connect it to host `{wyoming_host}` and port `{wyoming_port}`.\n\nThis integration does not install, manage, or proxy the add-on runtime."
+        "description": "HomeWakeWord installed from HACS is a helper integration for the HomeWakeWord add-on.\n\n1. Install and start the HomeWakeWord add-on separately if it is not already installed.\n2. Add Home Assistant's built-in Wyoming integration.\n3. Connect it to host `{wyoming_host}` and port `{wyoming_port}`.\n\nThis integration does not install, manage, or proxy the add-on runtime by itself. When Supervisor API access is available, it can push supported options to the add-on and request a restart."
       }
     }
   },
@@ -14,11 +14,15 @@
     "step": {
       "init": {
         "title": "HomeWakeWord options",
-        "description": "Update the add-on name shown in onboarding help and the Wyoming host/port shown to the user.",
+        "description": "Update the add-on label, Wyoming target, detector backend, and optional audio-processing settings. The helper will try to apply supported settings to the add-on and request a restart when Supervisor API access is available.",
         "data": {
           "addon_name": "Add-on name",
           "wyoming_host": "Wyoming host",
-          "wyoming_port": "Wyoming port"
+          "wyoming_port": "Wyoming port",
+          "detector_backend": "Detector backend",
+          "vad_enabled": "Enable VAD",
+          "vad_threshold": "VAD threshold",
+          "enable_speex_noise_suppression": "Enable Speex noise suppression"
         }
       }
     }

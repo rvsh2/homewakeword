@@ -69,6 +69,83 @@ def test_helper_integration_strings_expose_options_labels() -> None:
     assert options["data"]["addon_name"] == "Add-on name"
     assert options["data"]["wyoming_host"] == "Wyoming host"
     assert options["data"]["wyoming_port"] == "Wyoming port"
+    assert options["data"]["detector_backend"] == "Detector backend"
+    assert options["data"]["vad_enabled"] == "Enable VAD"
+    assert options["data"]["vad_threshold"] == "VAD threshold"
+    assert (
+        options["data"]["enable_speex_noise_suppression"]
+        == "Enable Speex noise suppression"
+    )
+
+
+def test_helper_notification_copy_mentions_runtime_settings() -> None:
+    import importlib.util
+
+    const_path = INTEGRATION_ROOT / "const.py"
+    spec = importlib.util.spec_from_file_location("homewakeword_const", const_path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    helper_path = INTEGRATION_ROOT / "helper.py"
+    helper_spec = importlib.util.spec_from_file_location(
+        "homewakeword_helper", helper_path
+    )
+    assert helper_spec is not None and helper_spec.loader is not None
+    helper_module = importlib.util.module_from_spec(helper_spec)
+    helper_spec.loader.exec_module(helper_module)
+    HelperSettings = helper_module.HelperSettings
+    ApplyResult = helper_module.ApplyResult
+    build_notification_message = helper_module.build_notification_message
+
+    message = build_notification_message(
+        HelperSettings(
+            addon_name="HomeWakeWord add-on",
+            wyoming_host="homewakeword",
+            wyoming_port=10700,
+            detector_backend="openwakeword",
+            vad_enabled=True,
+            vad_threshold=0.42,
+            speex_enabled=True,
+        ),
+        ApplyResult(status="applied", detail="options updated and restart requested"),
+    )
+
+    assert "Detector backend: `openwakeword`" in message
+    assert "VAD enabled: `true`" in message
+    assert "VAD threshold: `0.42`" in message
+    assert "Speex noise suppression: `true`" in message
+    assert "Add-on apply status: `applied`" in message
+
+
+def test_helper_payload_maps_options_to_addon_runtime_shape() -> None:
+    import importlib.util
+
+    helper_path = INTEGRATION_ROOT / "helper.py"
+    helper_spec = importlib.util.spec_from_file_location(
+        "homewakeword_helper", helper_path
+    )
+    assert helper_spec is not None and helper_spec.loader is not None
+    helper_module = importlib.util.module_from_spec(helper_spec)
+    helper_spec.loader.exec_module(helper_module)
+
+    payload = helper_module.build_addon_options_payload(
+        helper_module.HelperSettings(
+            addon_name="HomeWakeWord add-on",
+            wyoming_host="homewakeword",
+            wyoming_port=10700,
+            detector_backend="openwakeword",
+            vad_enabled=True,
+            vad_threshold=0.33,
+            speex_enabled=True,
+        )
+    )
+
+    assert payload["options"]["host"] == "0.0.0.0"
+    assert payload["options"]["port"] == 10700
+    assert payload["options"]["detector_backend"] == "openwakeword"
+    assert payload["options"]["vad_enabled"] is True
+    assert payload["options"]["vad_threshold"] == 0.33
+    assert payload["options"]["enable_speex_noise_suppression"] is True
 
 
 def test_validate_repo_requires_hacs_surface_paths() -> None:

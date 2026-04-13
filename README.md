@@ -53,6 +53,11 @@ Important:
 - After installing via HACS, use the helper integration only for onboarding guidance.
 - The actual runtime still runs through the **HomeWakeWord add-on** plus the built-in **Wyoming** integration.
 - Wyoming should connect to host `homewakeword` and port `10700`.
+- The helper integration now also lets you store user-facing settings for:
+  - detector backend
+  - VAD enabled / threshold
+  - Speex noise suppression
+  - Wyoming host / port
 
 ## Default add-on settings
 
